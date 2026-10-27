@@ -7,6 +7,8 @@ name = "omarchy-dms"
 version = "0.1.0"
 description = "Omarchy themes as Dank Material Shell (dmsProfiles) looks"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 keywords = ["omarchy", "dms", "dankmaterialshell", "theme"]
 

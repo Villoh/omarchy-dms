@@ -63,3 +63,7 @@ python3 -m unittest discover -s tests
 ```
 
 The tests drive a stateful fake of `dms ipc`; nothing touches a real shell.
+
+## License
+
+[MIT](LICENSE)
