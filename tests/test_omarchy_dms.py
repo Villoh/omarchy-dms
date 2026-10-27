@@ -173,6 +173,22 @@ class ThemeTests(unittest.TestCase):
             self.assertEqual(theme.mode_of(theme.load_palette(p)), "light")
 
 
+class CliTests(unittest.TestCase):
+    def test_version_flag(self):
+        import io
+        from contextlib import redirect_stdout
+
+        import omarchy_dms
+        from omarchy_dms.cli import main
+
+        out = io.StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit) as cm:
+            main(["--version"])
+        self.assertEqual(cm.exception.code, 0)
+        self.assertEqual(out.getvalue().strip(), f"omarchy-dms {omarchy_dms.__version__}")
+        self.assertRegex(omarchy_dms.__version__, r"^(\d+\.\d+\.\d+.*|unknown)$")
+
+
 class RepoTests(unittest.TestCase):
     def test_resolve(self):
         self.assertEqual(

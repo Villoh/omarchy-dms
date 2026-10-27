@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import theme
+from . import __version__, theme
 from .dms import Dms, DmsError
 from .ops import Omarchy, store_repos
 from .store import Store, StoreError
@@ -33,6 +33,7 @@ def _pick(items, prompt, multi):
 
 def _parser():
     p = argparse.ArgumentParser(prog="omarchy-dms", description="Omarchy themes as DMS profiles.")
+    p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser(
         "sync",
