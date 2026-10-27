@@ -52,8 +52,8 @@ gruvbox                profile  built-in
 periphery              -        community (no .source: reinstall to track)
 ```
 
-Columns: slug, whether it has a profile, and where it comes from: `built-in` (Omarchy's own, see
-below), the repository URL, or no `.source` (installed before the tool tracked origins).
+Columns: slug, whether it has a profile, and where it comes from: `built-in` (one of Omarchy's own, see
+[sync](#sync-omarchys-own-themes)), the repository URL, or no `.source` (installed before the tool tracked origins).
 
 ## update
 
@@ -81,7 +81,7 @@ omarchy-dms remove                  # pick with fzf; Tab marks several
 ```
 
 - If the profile being removed is the active one, it switches to **Original** first.
-- A [built-in](#omarchys-own-themes) theme only loses its profile; its files are managed by Nix.
+- A [built-in](#sync-omarchys-own-themes) theme written by `sync` is deleted like any other and `sync` brings it back; one deployed read-only (for example by Nix) only loses its profile.
 - Names are checked against the theme folders that exist, so nothing else is ever deleted.
 
 ## list
@@ -89,32 +89,36 @@ omarchy-dms remove                  # pick with fzf; Tab marks several
 Prints the repositories listed on [omarchy.org/themes](https://omarchy.org/themes/), as
 `owner/repo`, one per line. It does not check which ones have a `colors.toml`.
 
-## Omarchy's own themes
+## sync: Omarchy's own themes
 
-Omarchy itself ships a set of themes (the `themes/` directory of `basecamp/omarchy`).
-`sync` creates profiles for them. It needs:
-
-- `OMARCHY_THEMES` pointing at that `themes/` directory (for example a checkout of
-  `basecamp/omarchy`).
-- The theme folders already present in DMS, one per theme. `render` writes one:
-
-```sh
-omarchy-dms render "$OMARCHY_THEMES/nord/colors.toml" nord ~/.config/DankMaterialShell/themes/omarchy-nord
-```
+Omarchy itself ships a set of themes (the `themes/` directory of
+[`basecamp/omarchy`](https://github.com/basecamp/omarchy)). `sync` creates a profile for each.
 
 ```sh
 omarchy-dms sync                 # every theme
 omarchy-dms sync nord gruvbox    # just these
-omarchy-dms sync --force         # recreate profiles that already exist
+omarchy-dms sync --force         # also rewrite files and profiles that already exist
 ```
 
-Existing profiles are skipped unless you pass `--force`. On NixOS this can be done declaratively;
-see [development](development.md#use-it-from-nix).
+With nothing else set up, `sync` downloads what it needs: a partial clone of the Omarchy
+repository that fetches only each theme's `colors.toml` and still wallpapers (about 140 MB, a few
+seconds; the intro videos are skipped), kept in a temporary directory. For each theme it then
+writes the DMS theme folder and the wallpapers exactly like `install` does, and creates the profile.
+
+- Themes and profiles that already exist are skipped. `--force` rewrites them, which is also how
+  you pick up changes after Omarchy updates a theme.
+- To work offline or from a pinned version, point `OMARCHY_THEMES` at the `themes/` directory of a
+  checkout; nothing is downloaded then.
+- If the theme folders were deployed by something else as read-only symlinks (a Nix configuration
+  does this), `sync` uses them as they are and only creates profiles. `--force` does not rewrite
+  them.
+- `update` does not apply to these themes; use `sync --force`.
 
 ## render
 
 `omarchy-dms render COLORS_TOML NAME OUTDIR` converts one `colors.toml` into a DMS theme folder
-(`theme.json` plus the previews) without touching DMS. See
+(`theme.json` plus the previews) without touching DMS or copying wallpapers. It exists for
+declarative setups that generate the folders at build time; day to day, `sync` and `install` do it. See
 [color mapping](how-it-works.md#color-mapping).
 
 ## hook

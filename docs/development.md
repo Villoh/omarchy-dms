@@ -25,7 +25,9 @@ inputs.omarchy-dms = {
 };
 ```
 
-`sync` reads Omarchy's own themes from `OMARCHY_THEMES`. Wrapping the package to set it:
+This is optional. Without it `sync` downloads Omarchy's themes itself, as on any other distribution.
+To pin them to a flake input instead, and to deploy the theme folders declaratively, wrap the package
+so `OMARCHY_THEMES` is set:
 
 ```nix
 pkgs.symlinkJoin {

@@ -6,11 +6,13 @@
 |---|---|
 | DMS theme folders | `~/.config/DankMaterialShell/themes/omarchy-<slug>/` |
 | Wallpapers | `~/Pictures/Wallpapers/omarchy/<slug>/` |
-| Where a theme came from | `omarchy-<slug>/.source` |
+| Where a community theme came from | `omarchy-<slug>/.source` |
+| Marks one of Omarchy's own themes | `omarchy-<slug>/.builtin` |
 | Profiles | owned by dmsProfiles, in `~/.config/DankMaterialShell/profiles/` |
 
-Built-in themes (Omarchy's own, deployed by Nix) are symlinks into the Nix store and read-only.
-Community themes are real folders that `omarchy-dms` owns.
+`omarchy-dms` writes these folders itself, for both community themes (`install`) and Omarchy's own
+(`sync`). A setup that deploys them as read-only symlinks instead (Nix does) also works: such
+themes are only read, never rewritten or deleted.
 
 ## What a theme becomes
 

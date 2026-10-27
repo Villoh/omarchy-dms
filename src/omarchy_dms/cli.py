@@ -34,8 +34,11 @@ def _pick(items, prompt, multi):
 def _parser():
     p = argparse.ArgumentParser(prog="omarchy-dms", description="Omarchy themes as DMS profiles.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    s = sub.add_parser("sync", help="create profiles for Omarchy's own themes (all, or the ones named)")
-    s.add_argument("--force", action="store_true", help="recreate the ones that exist")
+    s = sub.add_parser(
+        "sync",
+        help="create profiles for Omarchy's own themes (downloaded unless OMARCHY_THEMES is set)",
+    )
+    s.add_argument("--force", action="store_true", help="recreate the profiles and theme files that exist")
     s.add_argument("themes", nargs="*")
     s = sub.add_parser("install", help="install a community theme and create its profile")
     s.add_argument("repo", nargs="?", help="owner/repo or git URL (none: pick from omarchy.org/themes)")
@@ -56,7 +59,7 @@ def _parser():
 
 def main(argv=None):
     args = _parser().parse_args(argv)
-    builtin = Path(os.environ["OMARCHY_THEMES"]) if "OMARCHY_THEMES" in os.environ else None
+    builtin = Path(os.environ["OMARCHY_THEMES"]) if os.environ.get("OMARCHY_THEMES") else None
     omarchy = Omarchy(Dms(), Store(THEMES, WALLPAPERS), builtin, _hook_command())
     try:
         match args.cmd:

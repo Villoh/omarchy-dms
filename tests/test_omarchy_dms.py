@@ -209,11 +209,87 @@ class OpsTests(unittest.TestCase):
         with self.assertRaises(StoreError):
             e.omarchy.sync(["nope"])
 
-    def test_sync_without_deployed_theme_fails_clearly(self):
+    def test_sync_writes_missing_theme_files_from_a_plain_checkout(self):
+        """No Nix: the theme folders and wallpapers do not exist yet and sync creates them."""
+        e = Env(self, builtin=("nord",))
+        (e.builtin_dir / "nord" / "backgrounds").mkdir()
+        (e.builtin_dir / "nord" / "backgrounds" / "1-a.jpg").write_bytes(b"x" * 5000)
+        (e.builtin_dir / "nord" / "backgrounds" / "tiny.png").write_bytes(b"x")
+        e.omarchy.sync()
+        self.assertTrue(e.store.theme_json("nord").is_file())
+        self.assertFalse(e.store.theme_json("nord").is_symlink())
+        self.assertEqual([p.name for p in e.store.images("nord")], ["1-a.jpg"])
+        self.assertEqual([r.origin for r in e.omarchy.installed()], ["built-in"])
+        self.assertEqual([p["slug"] for p in e.shell.profiles], ["original", "nord"])
+        self.assertEqual(e.shell.state["wallpaperPath"], str(e.store.images("nord")[0]))
+        self.assertEqual(e.shell.options.get("autosave"), "true")
+
+    def test_sync_leaves_existing_files_unless_forced_and_never_rewrites_readonly(self):
+        e = Env(self, builtin=("nord", "white"))
+        e.deploy_builtin("nord")  # deployed read-only, like Nix does
+        before = e.store.theme_json("nord").resolve()
+        e.omarchy.sync(["nord"], force=True)
+        self.assertEqual(e.store.theme_json("nord").resolve(), before)
+        self.assertTrue(e.store.theme_json("nord").is_symlink())
+        e.omarchy.sync(["white"])
+        marker = e.store.theme_dir("white") / "theme.json"
+        marker.write_text("edited")
+        e.omarchy.sync(["white"], force=True)
+        self.assertNotEqual(marker.read_text(), "edited")  # forced: rewritten
+
+    def test_sync_without_a_checkout_clones_only_what_it_needs(self):
+        e = Env(self, builtin=())
+        remote = e.tmp / "remote-omarchy"
+        for slug in ("nord", "white"):
+            d = remote / "themes" / slug
+            (d / "backgrounds" / "intros").mkdir(parents=True)
+            (d / "colors.toml").write_text(LIGHT if slug == "white" else DARK)
+            (d / "backgrounds" / "1.jpg").write_bytes(b"x" * 5000)
+            (d / "backgrounds" / "intros" / "intro.png").write_bytes(b"x" * 5000)
+            (d / "preview.png").write_bytes(b"x" * 5000)
+        git_env = {
+            **os.environ,
+            "GIT_AUTHOR_NAME": "t",
+            "GIT_AUTHOR_EMAIL": "t@t",
+            "GIT_COMMITTER_NAME": "t",
+            "GIT_COMMITTER_EMAIL": "t@t",
+        }
+        for cmd in (["init", "-q"], ["add", "."], ["-c", "commit.gpgsign=false", "commit", "-q", "-m", "x"]):
+            subprocess.run(["git", "-C", str(remote), *cmd], check=True, env=git_env)
+        e.omarchy = Omarchy(
+            e.omarchy.dms,
+            e.store,
+            None,
+            "omarchy-dms hook",
+            e.logs.append,
+            0,
+            lambda s: None,
+            omarchy_repo=f"file://{remote}",
+        )
+        e.omarchy.sync(["white"])
+        self.assertEqual([p["slug"] for p in e.shell.profiles], ["original", "white"])
+        self.assertTrue(e.store.theme_json("white").is_file())
+        self.assertFalse(e.store.theme_dir("nord").exists())  # only the one asked for
+        self.assertEqual([p.name for p in e.store.images("white")], ["1.jpg"])  # no intros
+        self.assertEqual(e.shell.state["isLightMode"], True)
+
+    def test_sync_rejects_a_missing_directory(self):
         e = Env(self)
+        e.omarchy.builtin_dir = e.tmp / "nope"
         with self.assertRaises(StoreError):
             e.omarchy.sync()
-        self.assertEqual(e.shell.options.get("autosave"), "true")  # restored on failure
+
+    def test_remove_and_update_for_themes_written_by_sync(self):
+        e = Env(self, builtin=("nord",))
+        e.omarchy.sync()
+        e.logs.clear()
+        e.omarchy.update(["nord"])
+        self.assertEqual(e.logs, ["nord is one of Omarchy's own themes: use sync --force"])
+        with self.assertRaises(StoreError):  # a community repo cannot take over the name
+            e.store.fetch("https://example.invalid/x", "nord")
+        e.omarchy.remove(["nord"])
+        self.assertFalse(e.store.theme_dir("nord").exists())  # not read-only: really deleted
+        self.assertEqual([p["slug"] for p in e.shell.profiles], ["original"])
 
     def test_install_update_remove_community(self):
         e = Env(self, profiles=("original",))
