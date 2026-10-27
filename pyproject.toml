@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omarchy-dms"
+version = "0.1.0"
+description = "Omarchy themes as Dank Material Shell (dmsProfiles) looks"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["omarchy", "dms", "dankmaterialshell", "theme"]
+
+[project.urls]
+Homepage = "https://github.com/Villoh/omarchy-dms"
+
+[project.scripts]
+omarchy-dms = "omarchy_dms.cli:main"
+
+[tool.setuptools]
+packages = ["omarchy_dms"]
