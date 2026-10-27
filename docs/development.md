@@ -51,16 +51,13 @@ Python 3.11 to 3.14, and the Nix build.
 ## Releasing
 
 1. Bump `version` in `pyproject.toml` (the Nix package reads it from there) and run `uv lock`.
-2. Write the notes for this version in `.github/release-notes/v<version>.md`: what is new, and
-   anything users should know. Leave out installation: it is added for you (see below). If the file
-   does not exist, GitHub generates the notes from merged pull requests.
-3. Commit, then tag and push:
+2. Commit, then tag and push:
 
    ```sh
    git tag -s v0.2.1 -m v0.2.1 && git push origin v0.2.1
    ```
 
-`.github/workflows/release.yml` then runs:
+There are no release notes to write. `.github/workflows/release.yml` runs:
 
 ```
 check-version -> ci -> build -> publish-pypi -> github-release
@@ -76,17 +73,14 @@ check-version -> ci -> build -> publish-pypi -> github-release
 
 ### The release body
 
-`.github/scripts/release-body.sh <tag>` composes it in two parts:
+It is GitHub's generated notes plus a short footer:
 
-1. The notes for the version (`.github/release-notes/<tag>.md`, or GitHub's generated ones).
-2. The sections every release carries, from `.github/release-notes/_install.md`: how to install
-   or upgrade, the Nix command, and links to the docs and to the exact version on PyPI. In that
-   file `{tag}` and `{version}` are replaced.
-
-To change what all releases say, edit `_install.md`. You can preview a body locally:
-
-```sh
-GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=Villoh/omarchy-dms .github/scripts/release-body.sh v0.2.0
-```
+- **The notes** list the pull requests merged since the previous tag, grouped by label as set in
+  `.github/release.yml` (`enhancement`, `bug`, `documentation`, anything else under "Other
+  changes"), with author and link. Work through pull requests and squash-merge them: the PR
+  title is the line that appears, so write it as a conventional commit (`feat: ...`). Commits
+  pushed straight to `main` do not show up.
+- **The footer** is `.github/release-footer.md`: how to install or upgrade and the link to the
+  docs of that version (`{tag}` is replaced). Edit that file to change what every release says.
 
 A version published to PyPI cannot be reused.
