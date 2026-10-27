@@ -11,9 +11,9 @@
 #                   keeps both as the "dist" artifact (no permissions needed)
 #   publish-pypi    uploads exactly that artifact to PyPI with trusted
 #                   publishing (no token); it never builds anything
-#   github-release  creates the GitHub release with the same files attached; its
-#                   notes come from .github/release-notes/<tag>.md when that file
-#                   exists, otherwise GitHub generates them from merged PRs
+#   github-release  creates the GitHub release with the same files attached; the body
+#                   is composed by .github/scripts/release-body.sh (the version's notes
+#                   plus the fixed Install section)
 #
 # To release: bump `version` in pyproject.toml, commit, then
 #   git tag v<version> && git push origin v<version>
@@ -94,17 +94,13 @@ jobs:
         with:
           name: dist
           path: dist/
+      - name: Compose the release body
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: .github/scripts/release-body.sh "$TAG" > release-body.md
       - name: Create the release with the files attached
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: |
-          # Notes written by hand for this version if the file exists,
-          # otherwise the ones GitHub generates from merged pull requests.
-          notes=".github/release-notes/${TAG}.md"
-          if [ -f "$notes" ]; then
-            notes_args=(--notes-file "$notes")
-          else
-            notes_args=(--generate-notes)
-          fi
-          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" "${notes_args[@]}"
+        run: gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file release-body.md

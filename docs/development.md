@@ -50,13 +50,14 @@ Python 3.11 to 3.14, and the Nix build.
 
 ## Releasing
 
-1. Bump `version` in `pyproject.toml`. The Nix package reads it from there.
-2. Optionally write the release notes in `.github/release-notes/v<version>.md`. If the file does
-   not exist, GitHub generates the notes from merged pull requests.
+1. Bump `version` in `pyproject.toml` (the Nix package reads it from there) and run `uv lock`.
+2. Write the notes for this version in `.github/release-notes/v<version>.md`: what is new, and
+   anything users should know. Leave out installation: it is added for you (see below). If the file
+   does not exist, GitHub generates the notes from merged pull requests.
 3. Commit, then tag and push:
 
    ```sh
-   git tag v0.1.1 && git push origin v0.1.1
+   git tag -s v0.2.1 -m v0.2.1 && git push origin v0.2.1
    ```
 
 `.github/workflows/release.yml` then runs:
@@ -72,5 +73,20 @@ check-version -> ci -> build -> publish-pypi -> github-release
 | `build` | Builds the sdist and wheel, installs the wheel in a clean environment and runs it. Keeps both as an artifact. |
 | `publish-pypi` | Uploads exactly that artifact with [trusted publishing](https://docs.pypi.org/trusted-publishers/), no token. |
 | `github-release` | Creates the GitHub release with the same files attached. |
+
+### The release body
+
+`.github/scripts/release-body.sh <tag>` composes it in two parts:
+
+1. The notes for the version (`.github/release-notes/<tag>.md`, or GitHub's generated ones).
+2. The sections every release carries, from `.github/release-notes/_install.md`: how to install
+   or upgrade, the Nix command, and links to the docs and to the exact version on PyPI. In that
+   file `{tag}` and `{version}` are replaced.
+
+To change what all releases say, edit `_install.md`. You can preview a body locally:
+
+```sh
+GH_TOKEN=$(gh auth token) GITHUB_REPOSITORY=Villoh/omarchy-dms .github/scripts/release-body.sh v0.2.0
+```
 
 A version published to PyPI cannot be reused.
