@@ -59,7 +59,7 @@ omarchy.install("owner/omarchy-example-theme")
 ## Development
 
 ```sh
-python3 -m unittest discover -s tests
+PYTHONPATH=src python3 -m unittest discover -s tests
 ```
 
 The tests drive a stateful fake of `dms ipc`; nothing touches a real shell.

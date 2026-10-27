@@ -18,5 +18,8 @@ Homepage = "https://github.com/Villoh/omarchy-dms"
 [project.scripts]
 omarchy-dms = "omarchy_dms.cli:main"
 
-[tool.setuptools]
-packages = ["omarchy_dms"]
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pyright]
+extraPaths = ["src"]
