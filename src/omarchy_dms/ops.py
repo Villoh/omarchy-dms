@@ -5,6 +5,7 @@ No printing and no exiting: progress goes to `log`, problems are exceptions
 """
 
 import re
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -15,9 +16,12 @@ from pathlib import Path
 
 from . import theme
 from .dms import Dms
-from .store import Store, StoreError, resolve_repo
+from .store import Store, StoreError, clone, resolve_repo
 
 STORE_URL = "https://omarchy.org/themes/"
+OMARCHY_REPO = "https://github.com/basecamp/omarchy"
+# Only the colors and the still wallpapers: the repository also holds intro videos.
+OWN_THEMES_SPARSE = ("/themes/*/colors.toml", "/themes/*/backgrounds/*", "!/themes/*/backgrounds/intros/")
 NOT_COMMUNITY = {"basecamp", "omacom"}
 
 
@@ -50,6 +54,7 @@ class Omarchy:
         log: Callable[[str], None] = print,
         settle: float = 1.0,
         sleep=time.sleep,
+        omarchy_repo: str = OMARCHY_REPO,
     ):
         self.dms = dms
         self.store = store
@@ -58,6 +63,7 @@ class Omarchy:
         self.log = log
         self.settle = settle
         self._sleep = sleep
+        self.omarchy_repo = omarchy_repo
 
     # -- internals
     @contextmanager
@@ -70,6 +76,27 @@ class Omarchy:
                 self.dms.create_profile("Original")
             yield
 
+    @contextmanager
+    def _own_themes(self):
+        """Omarchy's themes/ directory: the one given, or a fresh partial clone."""
+        if self.builtin_dir:
+            if not self.builtin_dir.is_dir():
+                raise StoreError(f"not a directory: {self.builtin_dir}")
+            yield self.builtin_dir
+            return
+        self.log(f"fetching Omarchy's themes from {self.omarchy_repo}")
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout = Path(tmp) / "omarchy"
+            clone(self.omarchy_repo, checkout, OWN_THEMES_SPARSE)
+            yield checkout / "themes"
+
+    def _ensure_files(self, slug, src, force):
+        """Theme folder and wallpapers for one of Omarchy's themes, unless deployed read-only."""
+        if self.store.is_readonly(slug):
+            return
+        if force or not self.store.theme_json(slug).is_file():
+            self.store.install_builtin(slug, src)
+
     def _make(self, slug, mode, force):
         name = theme.profile_name(slug)
         existing = self.dms.find_profile(slug, name)
@@ -79,7 +106,7 @@ class Omarchy:
                 return
             self.dms.remove_profile(existing["slug"])
         if not self.store.theme_json(slug).is_file():
-            raise StoreError(f"{slug}: theme folder missing (deploy the Home Manager config first)")
+            raise StoreError(f"{slug}: theme files are missing (run sync or install)")
         self.dms.custom_theme(self.store.theme_json(slug), f"omarchy-{slug}")
         self.dms.set_mode(mode)
         images = self.store.images(slug)
@@ -102,17 +129,22 @@ class Omarchy:
         ]
 
     def sync(self, names=(), force=False):
-        """Profiles for Omarchy's own themes (all, or the ones named)."""
-        if not self.builtin_dir or not self.builtin_dir.is_dir():
-            raise StoreError("Omarchy's own themes are not available (OMARCHY_THEMES is not set)")
-        available = {p.parent.name: p for p in sorted(self.builtin_dir.glob("*/colors.toml"))}
-        unknown = [n for n in names if n not in available]
-        if unknown:
-            raise StoreError(f"not an Omarchy theme: {', '.join(unknown)}")
-        with self._session():
-            for slug, colors in available.items():
-                if not names or slug in names:
-                    self._make(slug, theme.mode_of(theme.load_palette(colors)), force)
+        """Profiles for Omarchy's own themes (all, or the ones named).
+
+        Themes come from `builtin_dir` if given, otherwise from a partial clone of
+        the Omarchy repository. Missing theme folders and wallpapers are written;
+        with `force`, existing ones are rewritten too (unless deployed read-only).
+        """
+        with self._own_themes() as root:
+            available = {p.parent.name: p.parent for p in sorted(root.glob("*/colors.toml"))}
+            unknown = [n for n in names if n not in available]
+            if unknown:
+                raise StoreError(f"not an Omarchy theme: {', '.join(unknown)}")
+            with self._session():
+                for slug, src in available.items():
+                    if not names or slug in names:
+                        self._ensure_files(slug, src, force)
+                        self._make(slug, theme.mode_of(theme.load_palette(src / "colors.toml")), force)
 
     def install(self, arg):
         """Install a community theme (owner/repo or git URL); returns its slug."""
@@ -130,7 +162,9 @@ class Omarchy:
         """
         by_slug = {t.slug: t for t in self.store.themes()}
         for n in names:
-            if n not in by_slug or not by_slug[n].source:
+            if n in by_slug and by_slug[n].builtin:
+                self.log(f"{n} is one of Omarchy's own themes: use sync --force")
+            elif n not in by_slug or not by_slug[n].source:
                 self.log(f"not updatable (no .source): {n}")
         targets = [t for t in by_slug.values() if t.source and (not names or t.slug in names)]
         if not targets and not names:
@@ -164,7 +198,7 @@ class Omarchy:
                 if self.store.remove(slug):
                     self.log(f"removed: {slug}")
                 else:
-                    self.log(f"removed profile: {slug} (built-in files are managed by Nix; sync recreates it)")
+                    self.log(f"removed profile: {slug} (its files are read-only here; sync recreates the profile)")
 
     def hook(self, slug):
         """dmsProfiles apply command: point the wallpaper back at the whole theme folder.

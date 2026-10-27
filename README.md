@@ -20,6 +20,7 @@ You also need DMS with the **dmsProfiles** plugin, and, optionally, **Wallpaper 
 ## Quick start
 
 ```sh
+omarchy-dms sync                         # profiles for Omarchy's own themes (downloaded for you)
 omarchy-dms install                      # pick a theme from the omarchy.org/themes store (fzf)
 omarchy-dms install owner/repo           # or a repository / git URL
 omarchy-dms installed                    # every theme, its origin, and whether it has a profile
@@ -59,7 +60,8 @@ Installing a theme applies it, and your previous look is saved as a profile call
 - Only themes that ship a `colors.toml` work; alacritty-only themes are rejected.
 - Omarchy has no Material color roles, so the conversion is an approximation; light themes are the
   most likely to need tweaks.
-- Linux only. Developed and used on NixOS.
+- Linux with DMS. Nix is optional: it works the same on Arch, Fedora, NixOS and the rest. Developed
+  on NixOS; reports from other distributions are welcome.
 
 ## License
 

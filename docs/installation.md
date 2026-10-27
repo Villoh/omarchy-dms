@@ -44,9 +44,9 @@ pipx install git+https://github.com/Villoh/omarchy-dms
 nix run github:Villoh/omarchy-dms -- --help
 ```
 
-To install it declaratively, add the flake as an input and use
-`inputs.omarchy-dms.packages.${system}.default`. See [Omarchy's own themes](usage.md#omarchys-own-themes)
-if you also want `sync`.
+The tool does not need Nix; this is just another way to get it. To install it declaratively, add
+the flake as an input and use `inputs.omarchy-dms.packages.${system}.default`. See
+[Use it from Nix](development.md#use-it-from-nix).
 
 ## Install the plugins
 
@@ -67,3 +67,13 @@ omarchy-dms installed
 
 It prints one line per theme (nothing yet on a fresh install) and exits 0. If you see
 `error: dms not found in PATH`, DMS is not installed or not on your `PATH`.
+
+## First run
+
+```sh
+omarchy-dms sync            # profiles for Omarchy's own themes (downloads them)
+omarchy-dms install         # and/or pick community themes from the store
+dms ipc call profiles toggle
+```
+
+The same steps work on any distribution that runs DMS; nothing here is specific to Nix.

@@ -33,15 +33,18 @@ The package root re-exports `Dms`, `DmsError`, `Omarchy`, `Row`, `Store`, `Store
 
 ## Omarchy
 
-`Omarchy(dms, store, builtin_dir=None, hook_command="omarchy-dms hook", log=print, settle=1.0, sleep=time.sleep)`
+`Omarchy(dms, store, builtin_dir=None, hook_command="omarchy-dms hook", log=print, settle=1.0, sleep=time.sleep, omarchy_repo=OMARCHY_REPO)`
+
+`builtin_dir` is the `themes/` directory of an Omarchy checkout; when it is `None`, `sync` makes a
+partial clone of `omarchy_repo` instead.
 
 | Method | Returns | Does |
 |---|---|---|
 | `installed()` | `list[Row]` | Every theme: `slug`, `profile` (bool), `origin` (`"built-in"`, a URL, or `""`). |
-| `sync(names=(), force=False)` | | Profiles for Omarchy's own themes. Needs `builtin_dir`. |
+| `sync(names=(), force=False)` | | Theme files and profiles for Omarchy's own themes, from `builtin_dir` or a download. |
 | `install(arg)` | the slug | Install a community theme from `owner/repo` or a git URL. |
 | `update(names=())` | slugs that failed | Fetch installed community themes again. |
-| `remove(names)` | | Delete themes (built-ins only lose their profile). |
+| `remove(names)` | | Delete themes. Themes deployed read-only only lose their profile. |
 | `hook(slug)` | | The apply command: set the wallpaper back to the theme folder, detached. |
 
 ## Dms

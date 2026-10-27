@@ -1,7 +1,9 @@
-"""Theme folders and wallpapers on disk, and fetching community themes.
+"""Theme folders and wallpapers on disk, and fetching themes.
 
-Built-in themes (Omarchy's own, deployed by Nix) are symlinks into the store and
-read-only; community ones are real folders this module owns.
+A theme folder is either one this module wrote (community themes carry a
+`.source` file, Omarchy's own a `.builtin` one) or one deployed by something
+else as symlinks into a read-only location (for example Nix), which is only ever
+read.
 """
 
 import re
@@ -21,6 +23,22 @@ SHORTHAND_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 
 class StoreError(RuntimeError):
     pass
+
+
+def clone(url, dest, sparse=()):
+    """Shallow clone; with SPARSE (gitignore-style patterns) only those paths are downloaded."""
+
+    def git(*args):
+        r = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
+        if r.returncode:
+            raise StoreError(f"git clone {url}: {r.stderr.strip()}")
+
+    if not sparse:
+        git("clone", "--quiet", "--depth", "1", "--", url, str(dest))
+        return
+    git("clone", "--quiet", "--depth", "1", "--filter=blob:none", "--no-checkout", "--", url, str(dest))
+    git("-C", str(dest), "sparse-checkout", "set", "--no-cone", *sparse)
+    git("-C", str(dest), "checkout", "--quiet", "HEAD")
 
 
 @dataclass(frozen=True)
@@ -68,8 +86,13 @@ class Store:
             if (d / "theme.json").is_file() or (d / ".source").is_file()
         )
 
-    def is_builtin(self, slug):
+    def is_readonly(self, slug):
+        """Deployed as symlinks by something else (for example Nix): never written."""
         return self.theme_json(slug).is_symlink() or self.wallpapers(slug).is_symlink()
+
+    def is_builtin(self, slug):
+        """One of Omarchy's own themes, however it got here."""
+        return self.is_readonly(slug) or (self.theme_dir(slug) / ".builtin").is_file()
 
     def source(self, slug):
         f = self.theme_dir(slug) / ".source"
@@ -82,46 +105,51 @@ class Store:
         d = self.wallpapers(slug)
         return sorted(p for p in d.iterdir() if p.is_file()) if d.is_dir() else []
 
+    def _write(self, slug, src):
+        """Render SRC (a theme directory: colors.toml, backgrounds/) into the DMS folders."""
+        mode = theme.render(src / "colors.toml", slug, self.theme_dir(slug))
+        walls = self.wallpapers(slug)
+        walls.mkdir(parents=True, exist_ok=True)
+        backgrounds = src / "backgrounds"
+        for img in sorted(backgrounds.iterdir()) if backgrounds.is_dir() else []:
+            if (
+                img.is_file()
+                and not img.is_symlink()
+                and img.suffix.lower() in IMAGE_SUFFIXES
+                and img.stat().st_size > MIN_IMAGE_BYTES
+            ):
+                shutil.copyfile(img, walls / img.name)
+        return mode
+
     def fetch(self, url, slug):
-        """Clone URL and (re)write the theme folder and wallpapers; return the mode."""
+        """Clone a community theme and (re)write its folder and wallpapers; return the mode."""
         if not SLUG_RE.fullmatch(slug):
             raise StoreError(f"unusable theme name: {slug!r}")
         if self.is_builtin(slug):
-            raise StoreError(f"{slug} is one of Omarchy's built-in themes")
+            raise StoreError(f"{slug} is one of Omarchy's own themes (use sync)")
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / "repo"
-            r = subprocess.run(
-                ["git", "clone", "--quiet", "--depth", "1", "--", url, str(repo)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if r.returncode:
-                raise StoreError(f"git clone {url}: {r.stderr.strip()}")
-            colors = repo / "colors.toml"
-            if not colors.is_file():
+            clone(url, repo)
+            if not (repo / "colors.toml").is_file():
                 raise StoreError(f"{url} has no colors.toml (alacritty-only themes are not supported)")
-            mode = theme.render(colors, slug, self.theme_dir(slug))
-            walls = self.wallpapers(slug)
-            walls.mkdir(parents=True, exist_ok=True)
-            backgrounds = repo / "backgrounds"
-            for img in sorted(backgrounds.iterdir()) if backgrounds.is_dir() else []:
-                if (
-                    img.is_file()
-                    and not img.is_symlink()
-                    and img.suffix.lower() in IMAGE_SUFFIXES
-                    and img.stat().st_size > MIN_IMAGE_BYTES
-                ):
-                    shutil.copyfile(img, walls / img.name)
+            mode = self._write(slug, repo)
         # Remembered so `update` can fetch it again.
         (self.theme_dir(slug) / ".source").write_text(url + "\n")
         return mode
 
+    def install_builtin(self, slug, src):
+        """Write one of Omarchy's own themes from its directory in a checkout."""
+        if self.is_readonly(slug):
+            raise StoreError(f"{slug} is deployed read-only; it cannot be rewritten")
+        mode = self._write(slug, Path(src))
+        (self.theme_dir(slug) / ".builtin").write_text("")
+        return mode
+
     def remove(self, slug):
-        """Delete a community theme and its wallpapers; False for a built-in one."""
+        """Delete a theme and its wallpapers; False if it is deployed read-only."""
         if slug not in self.slugs():
             raise StoreError(f"unknown theme: {slug}")
-        if self.is_builtin(slug):
+        if self.is_readonly(slug):
             return False
         try:
             shutil.rmtree(self.theme_dir(slug))
