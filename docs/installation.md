@@ -62,6 +62,7 @@ Then enable them in Settings → Plugins. Details in [Companion plugins](compani
 ## Check it works
 
 ```sh
+omarchy-dms --version      # which version is installed
 omarchy-dms installed
 ```
 
