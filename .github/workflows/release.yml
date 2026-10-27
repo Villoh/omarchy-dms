@@ -1,64 +1,105 @@
-# Release: publishes a new version.
+# Release: raises the version and publishes it.
 #
-# Runs when a tag like v0.1.0 is pushed. Each job does one thing and only the
-# last two get any permissions beyond reading the repository:
+# Started by hand: Actions -> Release -> Run workflow, choosing which part of the
+# version to raise (or `gh workflow run release.yml -f bump=patch`). Only runs from main.
+# Each job does one thing, and only `bump` and `github-release` can write to the repository:
 #
-#   check-version -> ci -> build -> publish-pypi -> github-release
+#   checks -> bump -> build -> publish-pypi -> github-release
 #
-#   check-version   the tag must equal the version in pyproject.toml
-#   ci              the full CI (ci.yml) must pass on the tagged commit
-#   build           builds the sdist and wheel, smoke-tests the wheel, and
-#                   keeps both as the "dist" artifact (no permissions needed)
-#   publish-pypi    uploads exactly that artifact to PyPI with trusted
-#                   publishing (no token); it never builds anything
-#   github-release  creates the GitHub release with the same files attached. Its body
-#                   is GitHub's generated notes (the merged pull requests) plus the
-#                   small fixed footer in .github/release-footer.md
+#   checks          the full checks (ci.yml) must pass on main
+#   bump            raises the version in pyproject.toml and uv.lock, commits it to
+#                   main and tags it (vX.Y.Z); nothing to edit by hand
+#   build           builds the sdist and wheel from that tag, smoke-tests the wheel
+#                   (it must report the new version) and keeps both as the "dist" artifact
+#   publish-pypi    uploads exactly that artifact to PyPI with trusted publishing
+#                   (no token); it never builds anything
+#   github-release  creates the GitHub release with the same files attached. Its body is
+#                   GitHub's generated notes (the merged pull requests) plus the small
+#                   fixed footer in .github/release-footer.md
 #
-# To release: bump `version` in pyproject.toml, commit, then
-#   git tag v<version> && git push origin v<version>
+# If it fails after `bump`, the version commit and tag are already on main: finish the
+# release by fixing the cause and re-running only the failed jobs from this run.
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to raise
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
 permissions:
   contents: read
 
-jobs:
-  check-version:
-    name: Tag matches pyproject.toml
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6.0.2
-      - name: Compare the tag with the package version
-        run: |
-          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
-          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
-            echo "tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${version}" >&2
-            exit 1
-          fi
+concurrency:
+  group: release
+  cancel-in-progress: false
 
-  ci:
-    name: CI on the tagged commit
-    needs: check-version
+jobs:
+  checks:
+    name: Checks on main
+    if: github.ref == 'refs/heads/main' # a release is always cut from main
     uses: ./.github/workflows/ci.yml
 
-  build:
-    name: Build and smoke-test the package
-    needs: ci
+  bump:
+    name: Raise the version and tag it
+    needs: checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # pushes the version commit and the tag
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: astral-sh/setup-uv@v8.0.0
+      - name: Raise the version in pyproject.toml and uv.lock
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          uv version --bump "$BUMP" --no-sync
+          uv lock --check
+          version=$(uv version --short)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - name: Commit and tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "tag $TAG already exists" >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml uv.lock
+          git commit -m "chore: release $VERSION"
+          git tag -a "$TAG" -m "$TAG"
+          # One atomic push: either both land or neither does (for example if main moved).
+          git push --atomic origin HEAD:refs/heads/main "refs/tags/$TAG"
+
+  build:
+    name: Build and smoke-test the package
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ needs.bump.outputs.tag }}
+      - uses: astral-sh/setup-uv@v8.0.0
       - name: Build sdist and wheel
         run: uv build
-      - name: Install the wheel in a clean environment and run it
+      - name: Install the wheel in a clean environment and check its version
+        env:
+          VERSION: ${{ needs.bump.outputs.version }}
         run: |
           uv venv --python 3.13 .smoke-venv
           uv pip install --python .smoke-venv/bin/python dist/*.whl
-          .smoke-venv/bin/omarchy-dms --help >/dev/null
+          test "$(.smoke-venv/bin/omarchy-dms --version)" = "omarchy-dms $VERSION"
       - name: Keep the files for the next jobs
         uses: actions/upload-artifact@v4
         with:
@@ -83,12 +124,14 @@ jobs:
 
   github-release:
     name: Create the GitHub release
-    needs: publish-pypi
+    needs: [bump, publish-pypi]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ needs.bump.outputs.tag }}
       - name: Get the files built above
         uses: actions/download-artifact@v4
         with:
@@ -97,7 +140,7 @@ jobs:
       - name: Compose the release body
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ needs.bump.outputs.tag }}
         run: |
           # GitHub's notes (merged pull requests, grouped by .github/release.yml),
           # then the small fixed footer every release carries.
@@ -107,5 +150,5 @@ jobs:
       - name: Create the release with the files attached
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ needs.bump.outputs.tag }}
         run: gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file release-body.md

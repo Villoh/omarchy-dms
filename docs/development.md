@@ -50,26 +50,31 @@ Python 3.11 to 3.14, and the Nix build.
 
 ## Releasing
 
-1. Bump `version` in `pyproject.toml` (the Nix package reads it from there) and run `uv lock`.
-2. Commit, then tag and push:
+Releases are cut from `main` by the `Release` workflow, and nothing has to be edited by hand:
+it raises the version, commits it, tags it and publishes.
 
-   ```sh
-   git tag -s v0.2.1 -m v0.2.1 && git push origin v0.2.1
-   ```
+```sh
+gh workflow run release.yml -f bump=patch     # or minor, or major
+```
 
-There are no release notes to write. `.github/workflows/release.yml` runs:
+Or in GitHub: Actions → Release → Run workflow, and choose `patch`, `minor` or `major`. It must be
+run from `main`.
 
 ```
-check-version -> ci -> build -> publish-pypi -> github-release
+checks -> bump -> build -> publish-pypi -> github-release
 ```
 
 | Job | Does |
 |---|---|
-| `check-version` | The tag must equal the version in `pyproject.toml`. |
-| `ci` | The full CI on the tagged commit. |
-| `build` | Builds the sdist and wheel, installs the wheel in a clean environment and runs it. Keeps both as an artifact. |
+| `checks` | The full CI (`ci.yml`) must pass on `main`. Nothing is pushed if it fails. |
+| `bump` | Raises the version in `pyproject.toml` and `uv.lock` (`uv version --bump`), commits `chore: release X.Y.Z` to `main` and tags `vX.Y.Z`, in one atomic push. |
+| `build` | Builds the sdist and wheel from the tag, installs the wheel in a clean environment and checks that it reports the new version. Keeps both as an artifact. |
 | `publish-pypi` | Uploads exactly that artifact with [trusted publishing](https://docs.pypi.org/trusted-publishers/), no token. |
 | `github-release` | Creates the GitHub release with the same files attached. |
+
+The version commit is made by `github-actions[bot]`, so it is not GPG-signed. If a job after `bump`
+fails, the version commit and the tag are already on `main`: fix the cause and re-run the failed
+jobs of that run rather than starting a new release.
 
 ### The release body
 
