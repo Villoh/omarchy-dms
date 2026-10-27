@@ -53,23 +53,33 @@ class FakeShell:
             case ["profiles", "status"]:
                 return json.dumps({"active": self.active, "switching": bool(self.pending)})
             case ["profiles", "snapshot"]:
-                return json.dumps({"settings": {"customThemeFile": self.state["customThemeFile"]},
-                                   "session": {k: self.state[k] for k in ("isLightMode", "wallpaperPath")}})
+                return json.dumps(
+                    {
+                        "settings": {"customThemeFile": self.state["customThemeFile"]},
+                        "session": {k: self.state[k] for k in ("isLightMode", "wallpaperPath")},
+                    }
+                )
             case ["profiles", "setOption", k, v]:
                 self.options[k] = v
             case ["profiles", "create", name]:
                 slug = name.lower().replace(" ", "-")
+
                 def add(slug=slug, name=name):
                     self.profiles.append({"slug": slug, "name": name})
                     self.active = slug
+
                 self.pending.append((self.delay, add))
             case ["profiles", "remove", slug]:
+
                 def drop(slug=slug):
                     self.profiles = [p for p in self.profiles if p["slug"] != slug]
+
                 self.pending.append((self.delay, drop))
             case ["profiles", "apply", slug]:
+
                 def go(slug=slug):
                     self.active = slug
+
                 self.pending.append((self.delay, go))
             case ["profiles", "customTheme", f, *_]:
                 self.pending.append((self.delay, lambda f=f: self.state.update(customThemeFile=f)))
@@ -100,7 +110,12 @@ class Env:
         self.spawned = []
         self.omarchy = Omarchy(
             Dms(self.shell, sleep=lambda s: None, spawn=lambda *a, **k: self.spawned.append((a, k))),
-            self.store, self.builtin_dir, "omarchy-dms hook", self.logs.append, 0, lambda s: None,
+            self.store,
+            self.builtin_dir,
+            "omarchy-dms hook",
+            self.logs.append,
+            0,
+            lambda s: None,
         )
 
     def deploy_builtin(self, slug):
@@ -122,8 +137,13 @@ class Env:
             (repo / "backgrounds" / i).write_bytes(b"x" * 5000)
         (repo / "backgrounds" / "tiny.png").write_bytes(b"x")
         (repo / "backgrounds" / "intro.mp4").write_bytes(b"x" * 5000)
-        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-               "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+        env = {
+            **os.environ,
+            "GIT_AUTHOR_NAME": "t",
+            "GIT_AUTHOR_EMAIL": "t@t",
+            "GIT_COMMITTER_NAME": "t",
+            "GIT_COMMITTER_EMAIL": "t@t",
+        }
         for cmd in (["init", "-q"], ["add", "."], ["-c", "commit.gpgsign=false", "commit", "-q", "-m", "x"]):
             subprocess.run(["git", "-C", str(repo), *cmd], check=True, env=env)
         return f"file://{repo}"
@@ -155,7 +175,9 @@ class ThemeTests(unittest.TestCase):
 
 class RepoTests(unittest.TestCase):
     def test_resolve(self):
-        self.assertEqual(resolve_repo("catlee/omarchy-dracula-theme"), ("https://github.com/catlee/omarchy-dracula-theme", "dracula"))
+        self.assertEqual(
+            resolve_repo("catlee/omarchy-dracula-theme"), ("https://github.com/catlee/omarchy-dracula-theme", "dracula")
+        )
         self.assertEqual(resolve_repo("https://github.com/r-bart/omarchy-periphery-theme.git")[1], "periphery")
         self.assertEqual(resolve_repo("git@github.com:a/Omarchy-Foo-Theme.git")[1], "foo")
         for bad in ("gruvbox", "../x/y", "a/b/c", "https://x/.."):
@@ -240,8 +262,23 @@ class OpsTests(unittest.TestCase):
             e.store.fetch(url, "nord")
         repo = Path(url.removeprefix("file://"))
         (repo / "colors.toml").unlink()
-        subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t",
-                        "-c", "commit.gpgsign=false", "commit", "-qam", "x"], check=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo),
+                "-c",
+                "user.name=t",
+                "-c",
+                "user.email=t@t",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-qam",
+                "x",
+            ],
+            check=True,
+        )
         with self.assertRaises(StoreError):
             e.store.fetch(url, "other")
 

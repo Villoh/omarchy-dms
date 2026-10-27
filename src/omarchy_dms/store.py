@@ -92,7 +92,9 @@ class Store:
             repo = Path(tmp) / "repo"
             r = subprocess.run(
                 ["git", "clone", "--quiet", "--depth", "1", "--", url, str(repo)],
-                capture_output=True, text=True, check=False,
+                capture_output=True,
+                text=True,
+                check=False,
             )
             if r.returncode:
                 raise StoreError(f"git clone {url}: {r.stderr.strip()}")
@@ -105,7 +107,8 @@ class Store:
             backgrounds = repo / "backgrounds"
             for img in sorted(backgrounds.iterdir()) if backgrounds.is_dir() else []:
                 if (
-                    img.is_file() and not img.is_symlink()
+                    img.is_file()
+                    and not img.is_symlink()
                     and img.suffix.lower() in IMAGE_SUFFIXES
                     and img.stat().st_size > MIN_IMAGE_BYTES
                 ):

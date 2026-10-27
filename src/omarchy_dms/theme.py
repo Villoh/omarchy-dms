@@ -24,7 +24,7 @@ def _rgb(h):
     if len(h) in (3, 4):
         h = "".join(ch * 2 for ch in h)
     try:
-        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
     except ValueError as e:
         raise ThemeError(f"bad color {h!r}") from e
 
@@ -112,34 +112,34 @@ def preview(theme, mode):
     c = theme["dark"]
     title = f"{theme['name']} ({mode})"
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="280" height="240" viewBox="0 0 280 240">
-  <rect width="280" height="240" fill="{c['background']}"/>
-  <rect width="280" height="26" fill="{c['surface']}"/>
-  <rect x="12" y="9" width="20" height="8" rx="4" fill="{c['primary']}"/>
-  <circle cx="40" cy="13" r="3" fill="{c['surfaceVariantText']}"/>
-  <circle cx="50" cy="13" r="3" fill="{c['surfaceVariantText']}"/>
-  <text x="140" y="17" {FONT} font-size="10" font-weight="600" text-anchor="middle" fill="{c['primary']}">9:41</text>
-  <circle cx="238" cy="13" r="4" fill="{c['info']}"/>
-  <circle cx="252" cy="13" r="4" fill="{c['warning']}"/>
-  <circle cx="266" cy="13" r="4" fill="{c['error']}"/>
-  <rect x="14" y="38" width="252" height="190" rx="12" fill="{c['surface']}" stroke="{c['outline']}" stroke-opacity="0.5"/>
-  <text x="28" y="61" {FONT} font-size="12.5" font-weight="600" fill="{c['surfaceText']}">{title}</text>
-  <text x="28" y="77" {FONT} font-size="9.5" fill="{c['surfaceVariantText']}">Secondary text</text>
-  <rect x="26" y="87" width="228" height="50" rx="8" fill="{c['surfaceContainerHigh']}"/>
-  <text x="38" y="105" {FONT} font-size="10" font-weight="500" fill="{c['surfaceText']}">Nested card</text>
-  <text x="38" y="120" {FONT} font-size="9" fill="{c['surfaceVariantText']}">Body text on an elevated surface</text>
-  <rect x="26" y="145" width="228" height="22" rx="6" fill="{c['surface']}" stroke="{c['outline']}" stroke-opacity="0.4"/>
-  <text x="38" y="160" {FONT} font-size="9" fill="{c['surfaceVariantText']}">Search</text>
-  <rect x="26" y="175" width="78" height="22" rx="11" fill="{c['primary']}"/>
-  <text x="65" y="190" {FONT} font-size="9.5" font-weight="600" text-anchor="middle" fill="{c['primaryText']}">Button</text>
-  <rect x="112" y="175" width="70" height="22" rx="11" fill="{c['primary']}" fill-opacity="0.15"/>
-  <text x="147" y="190" {FONT} font-size="9.5" font-weight="500" text-anchor="middle" fill="{c['primary']}">Accent</text>
-  <rect x="190" y="175" width="64" height="22" rx="11" fill="{c['surfaceContainerHigh']}"/>
-  <text x="222" y="190" {FONT} font-size="9.5" text-anchor="middle" fill="{c['surfaceText']}">Chip</text>
-  <circle cx="34" cy="212" r="7" fill="{c['primary']}"/>
-  <circle cx="54" cy="212" r="7" fill="{c['secondary']}"/>
-  <circle cx="74" cy="212" r="7" fill="{c['error']}"/>
-  <circle cx="94" cy="212" r="7" fill="{c['warning']}"/>
-  <circle cx="114" cy="212" r="7" fill="{c['info']}"/>
+  <rect width="280" height="240" fill="{c["background"]}"/>
+  <rect width="280" height="26" fill="{c["surface"]}"/>
+  <rect x="12" y="9" width="20" height="8" rx="4" fill="{c["primary"]}"/>
+  <circle cx="40" cy="13" r="3" fill="{c["surfaceVariantText"]}"/>
+  <circle cx="50" cy="13" r="3" fill="{c["surfaceVariantText"]}"/>
+  <text x="140" y="17" {FONT} font-size="10" font-weight="600" text-anchor="middle" fill="{c["primary"]}">9:41</text>
+  <circle cx="238" cy="13" r="4" fill="{c["info"]}"/>
+  <circle cx="252" cy="13" r="4" fill="{c["warning"]}"/>
+  <circle cx="266" cy="13" r="4" fill="{c["error"]}"/>
+  <rect x="14" y="38" width="252" height="190" rx="12" fill="{c["surface"]}" stroke="{c["outline"]}" stroke-opacity="0.5"/>
+  <text x="28" y="61" {FONT} font-size="12.5" font-weight="600" fill="{c["surfaceText"]}">{title}</text>
+  <text x="28" y="77" {FONT} font-size="9.5" fill="{c["surfaceVariantText"]}">Secondary text</text>
+  <rect x="26" y="87" width="228" height="50" rx="8" fill="{c["surfaceContainerHigh"]}"/>
+  <text x="38" y="105" {FONT} font-size="10" font-weight="500" fill="{c["surfaceText"]}">Nested card</text>
+  <text x="38" y="120" {FONT} font-size="9" fill="{c["surfaceVariantText"]}">Body text on an elevated surface</text>
+  <rect x="26" y="145" width="228" height="22" rx="6" fill="{c["surface"]}" stroke="{c["outline"]}" stroke-opacity="0.4"/>
+  <text x="38" y="160" {FONT} font-size="9" fill="{c["surfaceVariantText"]}">Search</text>
+  <rect x="26" y="175" width="78" height="22" rx="11" fill="{c["primary"]}"/>
+  <text x="65" y="190" {FONT} font-size="9.5" font-weight="600" text-anchor="middle" fill="{c["primaryText"]}">Button</text>
+  <rect x="112" y="175" width="70" height="22" rx="11" fill="{c["primary"]}" fill-opacity="0.15"/>
+  <text x="147" y="190" {FONT} font-size="9.5" font-weight="500" text-anchor="middle" fill="{c["primary"]}">Accent</text>
+  <rect x="190" y="175" width="64" height="22" rx="11" fill="{c["surfaceContainerHigh"]}"/>
+  <text x="222" y="190" {FONT} font-size="9.5" text-anchor="middle" fill="{c["surfaceText"]}">Chip</text>
+  <circle cx="34" cy="212" r="7" fill="{c["primary"]}"/>
+  <circle cx="54" cy="212" r="7" fill="{c["secondary"]}"/>
+  <circle cx="74" cy="212" r="7" fill="{c["error"]}"/>
+  <circle cx="94" cy="212" r="7" fill="{c["warning"]}"/>
+  <circle cx="114" cy="212" r="7" fill="{c["info"]}"/>
 </svg>
 """
 

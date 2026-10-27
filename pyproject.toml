@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,10 +10,20 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-keywords = ["omarchy", "dms", "dankmaterialshell", "theme"]
+authors = [{ name = "Mikel Villota" }]
+keywords = ["omarchy", "dms", "dankmaterialshell", "theme", "dmsprofiles"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Desktop Environment",
+]
 
 [project.urls]
-Homepage = "https://github.com/Villoh/omarchy-dms"
+Repository = "https://github.com/Villoh/omarchy-dms"
+Issues = "https://github.com/Villoh/omarchy-dms/issues"
 
 [project.scripts]
 omarchy-dms = "omarchy_dms.cli:main"
@@ -23,3 +33,19 @@ where = ["src"]
 
 [tool.pyright]
 extraPaths = ["src"]
+
+[dependency-groups]
+dev = ["ruff>=0.11.0"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+# The preview SVG template and long test literals read better unwrapped.
+[tool.ruff.lint.per-file-ignores]
+"src/omarchy_dms/theme.py" = ["E501"]
+"tests/*.py" = ["E501"]

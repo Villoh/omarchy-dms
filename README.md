@@ -16,8 +16,12 @@ DMS with the `dmsProfiles` plugin enabled, Python 3.11+, `git`, and optionally `
 ## Install
 
 ```sh
+pipx install omarchy-dms
+# or, from the repository
 pipx install git+https://github.com/Villoh/omarchy-dms
 ```
+
+On Nix: `nix run github:Villoh/omarchy-dms`.
 
 ## Usage
 
@@ -59,8 +63,21 @@ omarchy.install("owner/omarchy-example-theme")
 ## Development
 
 ```sh
-PYTHONPATH=src python3 -m unittest discover -s tests
+uv sync
+uv run python -m unittest discover -s tests
+uv run ruff check . && uv run ruff format --check .
 ```
+
+## Releasing
+
+Bump `version` in `pyproject.toml` (the Nix package reads it from there), commit, then tag it:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+The `CD` workflow checks the tag against the version, runs CI (including the Nix build), publishes
+to PyPI with trusted publishing and creates the GitHub release.
 
 The tests drive a stateful fake of `dms ipc`; nothing touches a real shell.
 

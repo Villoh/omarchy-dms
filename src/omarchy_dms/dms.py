@@ -29,8 +29,14 @@ def run_dms(args):
 
 
 class Dms:
-    def __init__(self, runner: Runner = run_dms, sleep=time.sleep, attempts=60, interval=0.25,
-                 spawn: Callable[..., object] = subprocess.Popen):
+    def __init__(
+        self,
+        runner: Runner = run_dms,
+        sleep=time.sleep,
+        attempts=60,
+        interval=0.25,
+        spawn: Callable[..., object] = subprocess.Popen,
+    ):
         self._run = runner
         self._sleep = sleep
         self.attempts = attempts

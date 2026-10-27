@@ -16,7 +16,8 @@
       packages = forAllSystems (pkgs: rec {
         omarchy-dms = pkgs.python3Packages.buildPythonApplication {
           pname = "omarchy-dms";
-          version = "0.1.0";
+          # One source of truth for the version: pyproject.toml.
+          version = (builtins.fromTOML (builtins.readFile ./pyproject.toml)).project.version;
           pyproject = true;
           src = ./.;
           build-system = [ pkgs.python3Packages.setuptools ];

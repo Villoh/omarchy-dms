@@ -93,8 +93,11 @@ class Omarchy:
     def installed(self):
         names = {p.get("slug") for p in self.dms.profiles()} | {p.get("name") for p in self.dms.profiles()}
         return [
-            Row(t.slug, t.slug in names or theme.profile_name(t.slug) in names,
-                "built-in" if t.builtin else (t.source or ""))
+            Row(
+                t.slug,
+                t.slug in names or theme.profile_name(t.slug) in names,
+                "built-in" if t.builtin else (t.source or ""),
+            )
             for t in self.store.themes()
         ]
 
