@@ -11,9 +11,9 @@
 #                   keeps both as the "dist" artifact (no permissions needed)
 #   publish-pypi    uploads exactly that artifact to PyPI with trusted
 #                   publishing (no token); it never builds anything
-#   github-release  creates the GitHub release with the same files attached; the body
-#                   is composed by .github/scripts/release-body.sh (the version's notes
-#                   plus the fixed Install section)
+#   github-release  creates the GitHub release with the same files attached. Its body
+#                   is GitHub's generated notes (the merged pull requests) plus the
+#                   small fixed footer in .github/release-footer.md
 #
 # To release: bump `version` in pyproject.toml, commit, then
 #   git tag v<version> && git push origin v<version>
@@ -98,7 +98,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: .github/scripts/release-body.sh "$TAG" > release-body.md
+        run: |
+          # GitHub's notes (merged pull requests, grouped by .github/release.yml),
+          # then the small fixed footer every release carries.
+          gh api -X POST "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" --jq .body > release-body.md
+          printf '\n' >> release-body.md
+          sed "s/{tag}/$TAG/g" .github/release-footer.md >> release-body.md
       - name: Create the release with the files attached
         env:
           GH_TOKEN: ${{ github.token }}
