@@ -76,10 +76,9 @@ Bump `version` in `pyproject.toml` (the Nix package reads it from there), commit
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-The `CD` workflow checks the tag against the version, runs CI (including the Nix build), publishes
-to PyPI with trusted publishing and creates the GitHub release.
-
-The tests drive a stateful fake of `dms ipc`; nothing touches a real shell.
+`.github/workflows/release.yml` does the rest: it checks the tag against the version, runs CI,
+builds and smoke-tests the package, publishes it to PyPI with trusted publishing, and creates the
+GitHub release.
 
 ## License
 
