@@ -78,7 +78,8 @@ git tag v0.1.0 && git push origin v0.1.0
 
 `.github/workflows/release.yml` does the rest: it checks the tag against the version, runs CI,
 builds and smoke-tests the package, publishes it to PyPI with trusted publishing, and creates the
-GitHub release.
+GitHub release. Its notes are `.github/release-notes/<tag>.md` if you wrote one, otherwise
+the ones GitHub generates from merged pull requests.
 
 ## License
 

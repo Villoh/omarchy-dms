@@ -11,7 +11,9 @@
 #                   keeps both as the "dist" artifact (no permissions needed)
 #   publish-pypi    uploads exactly that artifact to PyPI with trusted
 #                   publishing (no token); it never builds anything
-#   github-release  creates the GitHub release with the same files attached
+#   github-release  creates the GitHub release with the same files attached; its
+#                   notes come from .github/release-notes/<tag>.md when that file
+#                   exists, otherwise GitHub generates them from merged PRs
 #
 # To release: bump `version` in pyproject.toml, commit, then
 #   git tag v<version> && git push origin v<version>
@@ -86,6 +88,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v6.0.2
       - name: Get the files built above
         uses: actions/download-artifact@v4
         with:
@@ -95,4 +98,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes
+        run: |
+          # Notes written by hand for this version if the file exists,
+          # otherwise the ones GitHub generates from merged pull requests.
+          notes=".github/release-notes/${TAG}.md"
+          if [ -f "$notes" ]; then
+            notes_args=(--notes-file "$notes")
+          else
+            notes_args=(--generate-notes)
+          fi
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" "${notes_args[@]}"
