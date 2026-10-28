@@ -61,7 +61,7 @@ Fetches installed community themes again and rewrites their files.
 
 ```sh
 omarchy-dms update              # all of them
-omarchy-dms update dracula      # just this one
+omarchy-dms update dracula      # just this one (owner/repo works too)
 ```
 
 - Themes without a `.source` are skipped with a message; reinstall them once with `install`.
@@ -76,7 +76,7 @@ Deletes a theme: its folder, its wallpapers and its profile.
 
 ```sh
 omarchy-dms remove dracula          # asks "continue? [y/N]"
-omarchy-dms remove -y dracula nord
+omarchy-dms remove -y dracula nord  # owner/repo works too
 omarchy-dms remove                  # pick with fzf; Tab marks several
 ```
 

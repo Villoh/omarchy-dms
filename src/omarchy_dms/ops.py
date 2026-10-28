@@ -160,6 +160,7 @@ class Omarchy:
         Profiles are left alone: they point at theme.json by path, so the colors
         follow; `install` again to also refresh a profile's own wallpaper copy.
         """
+        names = [self.slug(n) for n in names]
         by_slug = {t.slug: t for t in self.store.themes()}
         for n in names:
             if n in by_slug and by_slug[n].builtin:
@@ -179,8 +180,18 @@ class Omarchy:
                 failed.append(t.slug)
         return failed
 
+    def slug(self, name):
+        """A theme slug for `name`, which may also be the owner/repo or URL it was installed from."""
+        if name in self.store.slugs():
+            return name
+        try:
+            return resolve_repo(name)[1]
+        except StoreError:
+            return name
+
     def remove(self, names):
         """Delete themes: files, wallpapers and profile. Built-ins only lose the profile."""
+        names = [self.slug(n) for n in names]
         known = set(self.store.slugs())
         unknown = [n for n in names if n not in known]
         if unknown:
