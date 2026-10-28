@@ -24,7 +24,7 @@ omarchy-dms sync                         # profiles for Omarchy's own themes (do
 omarchy-dms install                      # pick a theme from the omarchy.org/themes store (fzf)
 omarchy-dms install owner/repo           # or a repository / git URL
 omarchy-dms list                         # the themes you have, their origin, and whether they have a profile
-omarchy-dms search [text]                # themes on omarchy.org/themes
+omarchy-dms search text                  # find themes on omarchy.org/themes (--owner, --available, --all)
 omarchy-dms update [theme...]            # refetch installed themes
 omarchy-dms remove [-y] [theme...]       # theme, wallpapers and profile
 ```

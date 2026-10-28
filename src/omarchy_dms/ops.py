@@ -180,8 +180,12 @@ class Omarchy:
                 failed.append(t.slug)
         return failed
 
-    def available(self, query=""):
-        """The store's themes as (slug, owner/repo, installed), sorted by slug; `query` filters them."""
+    def available(self, query="", owner="", only_new=False):
+        """The store's themes as (slug, owner/repo, installed), sorted by slug.
+
+        `query` must be in the slug or repo, `owner` must be the repo's owner, `only_new` drops
+        the ones you already have.
+        """
         have = set(self.store.slugs())
         rows = []
         for repo in store_repos():
@@ -189,7 +193,11 @@ class Omarchy:
                 slug = resolve_repo(repo)[1]
             except StoreError:
                 continue  # a name that could never be installed
-            if query.lower() in f"{slug} {repo}".lower():
+            if (
+                query.lower() in f"{slug} {repo}".lower()
+                and (not owner or repo.split("/")[0].lower() == owner.lower())
+                and not (only_new and slug in have)
+            ):
                 rows.append((slug, repo, slug in have))
         return sorted(rows)
 

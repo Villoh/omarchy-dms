@@ -3,7 +3,7 @@
 ```
 omarchy-dms install [owner/repo | git URL]
 omarchy-dms list
-omarchy-dms search [text]
+omarchy-dms search [text] [--owner USER] [--available] [--all]
 omarchy-dms update [theme ...]
 omarchy-dms remove [-y] [theme ...]
 omarchy-dms sync [--force] [theme ...]
@@ -90,8 +90,14 @@ omarchy-dms remove                  # pick with fzf; Tab marks several
 
 ## search
 
-Looks in the themes listed on [omarchy.org/themes](https://omarchy.org/themes/), optionally only those
-whose name or repository contains the text.
+Looks in the themes listed on [omarchy.org/themes](https://omarchy.org/themes/). It needs something
+to look for: some text (matched against the name and the repository), `--owner USER`, or `--all`.
+
+| Flag | Does |
+|---|---|
+| `--owner USER` | Only repositories of this GitHub user. |
+| `--available` | Hides the themes you already have. |
+| `--all` | No text needed: every theme in the store. To browse them, `omarchy-dms install` with no argument opens an fzf picker. |
 
 ```
 $ omarchy-dms search drac

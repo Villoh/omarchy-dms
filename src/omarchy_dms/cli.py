@@ -66,8 +66,11 @@ def _parser():
     s.add_argument("-y", "--yes", action="store_true", help="do not ask")
     s.add_argument("themes", nargs="*")
     sub.add_parser("list", aliases=["installed"], help="the themes you have: origin and whether they have a profile")
-    s = sub.add_parser("search", help="themes on omarchy.org/themes (optionally matching text)")
-    s.add_argument("text", nargs="?", default="")
+    s = sub.add_parser("search", help="find themes on omarchy.org/themes by name or repo")
+    s.add_argument("text", nargs="?", default="", help="part of the theme name or repo")
+    s.add_argument("--owner", default="", metavar="USER", help="only repos of this GitHub user")
+    s.add_argument("--available", action="store_true", help="hide the ones you already have")
+    s.add_argument("--all", action="store_true", help="no text needed: every theme in the store")
     s = sub.add_parser("render", help="convert a colors.toml into a DMS theme folder")
     s.add_argument("colors")
     s.add_argument("slug")
@@ -77,7 +80,10 @@ def _parser():
 
 
 def main(argv=None):
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.cmd == "search" and not (args.text or args.owner or args.all):
+        parser.error("search needs some text, --owner USER or --all")
     builtin = Path(os.environ["OMARCHY_THEMES"]) if os.environ.get("OMARCHY_THEMES") else None
     omarchy = Omarchy(Dms(), Store(THEMES, WALLPAPERS), builtin, _hook_command())
     try:
@@ -110,10 +116,13 @@ def main(argv=None):
                 if sys.stdout.isatty():
                     _table(
                         ("NAME", "REPO", "STATE"),
-                        [(s, r, "installed" if h else "") for s, r, h in omarchy.available(args.text)],
+                        [
+                            (s, r, "installed" if h else "")
+                            for s, r, h in omarchy.available(args.text, args.owner, args.available)
+                        ],
                     )
                 else:  # piped: plain owner/repo, one per line
-                    print("\n".join(r for _, r, _ in omarchy.available(args.text)))
+                    print("\n".join(r for _, r, _ in omarchy.available(args.text, args.owner, args.available)))
             case "render":
                 theme.render(args.colors, args.slug, args.outdir)
             case "hook":

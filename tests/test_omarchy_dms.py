@@ -350,6 +350,8 @@ class OpsTests(unittest.TestCase):
             )
             self.assertEqual(e.omarchy.available("ZED"), [("zed", "b/omarchy-zed-theme", False)])  # filter on slug/repo
             self.assertEqual(e.omarchy.available("a/"), [("dracula", "a/omarchy-dracula-theme", True)])
+            self.assertEqual(e.omarchy.available(owner="B"), [("zed", "b/omarchy-zed-theme", False)])
+            self.assertEqual(e.omarchy.available(only_new=True), [("zed", "b/omarchy-zed-theme", False)])
 
     def test_update_reports_failures_and_continues(self):
         e = Env(self)
