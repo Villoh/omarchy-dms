@@ -63,7 +63,7 @@ Then enable them in Settings → Plugins. Details in [Companion plugins](compani
 
 ```sh
 omarchy-dms --version      # which version is installed
-omarchy-dms installed
+omarchy-dms list
 ```
 
 It prints one line per theme (nothing yet on a fresh install) and exits 0. If you see

@@ -23,7 +23,8 @@ You also need DMS with the **dmsProfiles** plugin, and, optionally, **Wallpaper 
 omarchy-dms sync                         # profiles for Omarchy's own themes (downloaded for you)
 omarchy-dms install                      # pick a theme from the omarchy.org/themes store (fzf)
 omarchy-dms install owner/repo           # or a repository / git URL
-omarchy-dms installed                    # every theme, its origin, and whether it has a profile
+omarchy-dms list                         # the themes you have, their origin, and whether they have a profile
+omarchy-dms search text                  # find themes on omarchy.org/themes (--owner, --available, --all, --limit)
 omarchy-dms update [theme...]            # refetch installed themes
 omarchy-dms remove [-y] [theme...]       # theme, wallpapers and profile
 ```
