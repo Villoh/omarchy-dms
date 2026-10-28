@@ -331,6 +331,13 @@ class OpsTests(unittest.TestCase):
         self.assertFalse(e.store.theme_dir("dracula").exists())
         self.assertFalse(e.store.wallpapers("dracula").exists())
 
+    def test_remove_and_update_accept_the_repo_they_were_installed_from(self):
+        e = Env(self, profiles=("original",))
+        e.store.fetch(e.community_repo(), "dracula")
+        self.assertEqual(e.omarchy.update(["someone/omarchy-dracula-theme"]), [])
+        e.omarchy.remove(["someone/omarchy-dracula-theme"])
+        self.assertFalse(e.store.theme_dir("dracula").exists())
+
     def test_update_reports_failures_and_continues(self):
         e = Env(self)
         good = e.community_repo()
