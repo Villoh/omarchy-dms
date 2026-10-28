@@ -86,8 +86,10 @@ omarchy-dms remove                  # pick with fzf; Tab marks several
 
 ## list
 
-Prints the repositories listed on [omarchy.org/themes](https://omarchy.org/themes/), as
-`owner/repo`, one per line. It does not check which ones have a `colors.toml`.
+Prints the themes listed on [omarchy.org/themes](https://omarchy.org/themes/) sorted by name:
+the theme name (what `remove` and `update` take), its `owner/repo` (what `install` takes) and
+`installed` when you already have it. When piped it prints just `owner/repo`, one per line. It
+does not check which ones have a `colors.toml`.
 
 ## sync: Omarchy's own themes
 

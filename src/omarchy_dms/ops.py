@@ -180,6 +180,18 @@ class Omarchy:
                 failed.append(t.slug)
         return failed
 
+    def available(self):
+        """The store's themes as (slug, owner/repo, installed), sorted by slug."""
+        have = set(self.store.slugs())
+        rows = []
+        for repo in store_repos():
+            try:
+                slug = resolve_repo(repo)[1]
+            except StoreError:
+                continue  # a name that could never be installed
+            rows.append((slug, repo, slug in have))
+        return sorted(rows)
+
     def slug(self, name):
         """A theme slug for `name`, which may also be the owner/repo or URL it was installed from."""
         if name in self.store.slugs():

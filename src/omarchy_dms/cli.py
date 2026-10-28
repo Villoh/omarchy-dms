@@ -49,7 +49,7 @@ def _parser():
     s.add_argument("-y", "--yes", action="store_true", help="do not ask")
     s.add_argument("themes", nargs="*")
     sub.add_parser("installed", help="every theme, where it comes from, profile or not")
-    sub.add_parser("list", help="repos listed on omarchy.org/themes")
+    sub.add_parser("list", help="themes listed on omarchy.org/themes (slug, repo, installed)")
     s = sub.add_parser("render", help="convert a colors.toml into a DMS theme folder")
     s.add_argument("colors")
     s.add_argument("slug")
@@ -85,7 +85,11 @@ def main(argv=None):
                     origin = row.origin or "community (no .source: reinstall to track)"
                     print(f"{row.slug:<22} {'profile' if row.profile else '-':<8} {origin}")
             case "list":
-                print("\n".join(store_repos()))
+                if sys.stdout.isatty():
+                    for slug, repo, have in omarchy.available():
+                        print(f"{slug:<28} {repo:<52} {'installed' if have else ''}".rstrip())
+                else:  # piped: plain owner/repo, one per line
+                    print("\n".join(store_repos()))
             case "render":
                 theme.render(args.colors, args.slug, args.outdir)
             case "hook":

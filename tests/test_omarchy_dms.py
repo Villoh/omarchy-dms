@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from omarchy_dms import theme
 from omarchy_dms.dms import Dms, DmsError
@@ -337,6 +338,16 @@ class OpsTests(unittest.TestCase):
         self.assertEqual(e.omarchy.update(["someone/omarchy-dracula-theme"]), [])
         e.omarchy.remove(["someone/omarchy-dracula-theme"])
         self.assertFalse(e.store.theme_dir("dracula").exists())
+
+    def test_available_sorts_by_slug_and_marks_installed(self):
+        e = Env(self, profiles=("original",))
+        e.store.fetch(e.community_repo(), "dracula")
+        repos = ["b/omarchy-zed-theme", "a/omarchy-dracula-theme", "c/bad name"]
+        with mock.patch("omarchy_dms.ops.store_repos", return_value=repos):
+            self.assertEqual(
+                e.omarchy.available(),
+                [("dracula", "a/omarchy-dracula-theme", True), ("zed", "b/omarchy-zed-theme", False)],
+            )
 
     def test_update_reports_failures_and_continues(self):
         e = Env(self)
