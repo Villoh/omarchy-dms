@@ -3,7 +3,7 @@
 ```
 omarchy-dms install [owner/repo | git URL]
 omarchy-dms list
-omarchy-dms search [text] [--owner USER] [--available] [--all]
+omarchy-dms search [text] [--owner USER] [--available] [--all] [--limit N]
 omarchy-dms update [theme ...]
 omarchy-dms remove [-y] [theme ...]
 omarchy-dms sync [--force] [theme ...]
@@ -97,6 +97,7 @@ to look for: some text (matched against the name and the repository), `--owner U
 |---|---|
 | `--owner USER` | Only repositories of this GitHub user. |
 | `--available` | Hides the themes you already have. |
+| `--limit N` | Shows at most N themes, and says on stderr how many matched (`showing 10 of 218`). |
 | `--all` | No text needed: every theme in the store. To browse them, `omarchy-dms install` with no argument opens an fzf picker. |
 
 ```

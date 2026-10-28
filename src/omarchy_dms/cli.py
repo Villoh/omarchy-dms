@@ -71,6 +71,7 @@ def _parser():
     s.add_argument("--owner", default="", metavar="USER", help="only repos of this GitHub user")
     s.add_argument("--available", action="store_true", help="hide the ones you already have")
     s.add_argument("--all", action="store_true", help="no text needed: every theme in the store")
+    s.add_argument("--limit", type=int, metavar="N", help="show at most N themes")
     s = sub.add_parser("render", help="convert a colors.toml into a DMS theme folder")
     s.add_argument("colors")
     s.add_argument("slug")
@@ -82,8 +83,11 @@ def _parser():
 def main(argv=None):
     parser = _parser()
     args = parser.parse_args(argv)
-    if args.cmd == "search" and not (args.text or args.owner or args.all):
-        parser.error("search needs some text, --owner USER or --all")
+    if args.cmd == "search":
+        if not (args.text or args.owner or args.all):
+            parser.error("search needs some text, --owner USER or --all")
+        if args.limit is not None and args.limit < 1:
+            parser.error("--limit must be at least 1")
     builtin = Path(os.environ["OMARCHY_THEMES"]) if os.environ.get("OMARCHY_THEMES") else None
     omarchy = Omarchy(Dms(), Store(THEMES, WALLPAPERS), builtin, _hook_command())
     try:
@@ -113,16 +117,14 @@ def main(argv=None):
                     ],
                 )
             case "search":
+                found = omarchy.available(args.text, args.owner, args.available)
+                shown = found[: args.limit]
                 if sys.stdout.isatty():
-                    _table(
-                        ("NAME", "REPO", "STATE"),
-                        [
-                            (s, r, "installed" if h else "")
-                            for s, r, h in omarchy.available(args.text, args.owner, args.available)
-                        ],
-                    )
+                    _table(("NAME", "REPO", "STATE"), [(s, r, "installed" if h else "") for s, r, h in shown])
                 else:  # piped: plain owner/repo, one per line
-                    print("\n".join(r for _, r, _ in omarchy.available(args.text, args.owner, args.available)))
+                    print("\n".join(r for _, r, _ in shown))
+                if len(shown) < len(found):
+                    print(f"showing {len(shown)} of {len(found)}", file=sys.stderr)
             case "render":
                 theme.render(args.colors, args.slug, args.outdir)
             case "hook":
