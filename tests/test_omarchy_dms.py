@@ -348,6 +348,8 @@ class OpsTests(unittest.TestCase):
                 e.omarchy.available(),
                 [("dracula", "a/omarchy-dracula-theme", True), ("zed", "b/omarchy-zed-theme", False)],
             )
+            self.assertEqual(e.omarchy.available("ZED"), [("zed", "b/omarchy-zed-theme", False)])  # filter on slug/repo
+            self.assertEqual(e.omarchy.available("a/"), [("dracula", "a/omarchy-dracula-theme", True)])
 
     def test_update_reports_failures_and_continues(self):
         e = Env(self)

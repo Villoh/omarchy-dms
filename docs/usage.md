@@ -2,10 +2,10 @@
 
 ```
 omarchy-dms install [owner/repo | git URL]
-omarchy-dms installed
+omarchy-dms list
+omarchy-dms search [text]
 omarchy-dms update [theme ...]
 omarchy-dms remove [-y] [theme ...]
-omarchy-dms list
 omarchy-dms sync [--force] [theme ...]
 omarchy-dms render COLORS_TOML NAME OUTDIR
 omarchy-dms hook
@@ -43,17 +43,21 @@ What it does, in order:
 
 Installing a theme that is already installed refreshes its files and recreates its profile.
 
-## installed
+## list
+
+The themes you have. Works offline. (`installed` is an older name for the same command.)
 
 ```
-$ omarchy-dms installed
-dracula                profile  https://github.com/catlee/omarchy-dracula-theme
-gruvbox                profile  built-in
-periphery              -        community (no .source: reinstall to track)
+$ omarchy-dms list
+NAME        PROFILE  SOURCE
+dracula     yes      https://github.com/catlee/omarchy-dracula-theme
+gruvbox     yes      built-in
+periphery   -        community (no .source: reinstall to track)
 ```
 
-Columns: slug, whether it has a profile, and where it comes from: `built-in` (one of Omarchy's own, see
-[sync](#sync-omarchys-own-themes)), the repository URL, or no `.source` (installed before the tool tracked origins).
+Columns: the theme name (what `update` and `remove` take), whether it has a profile, and where it comes
+from: `built-in` (one of Omarchy's own, see [sync](#sync-omarchys-own-themes)), the repository URL, or no
+`.source` (installed before the tool tracked origins).
 
 ## update
 
@@ -84,12 +88,21 @@ omarchy-dms remove                  # pick with fzf; Tab marks several
 - A [built-in](#sync-omarchys-own-themes) theme written by `sync` is deleted like any other and `sync` brings it back; one deployed read-only (for example by Nix) only loses its profile.
 - Names are checked against the theme folders that exist, so nothing else is ever deleted.
 
-## list
+## search
 
-Prints the themes listed on [omarchy.org/themes](https://omarchy.org/themes/) sorted by name:
-the theme name (what `remove` and `update` take), its `owner/repo` (what `install` takes) and
-`installed` when you already have it. When piped it prints just `owner/repo`, one per line. It
-does not check which ones have a `colors.toml`.
+Looks in the themes listed on [omarchy.org/themes](https://omarchy.org/themes/), optionally only those
+whose name or repository contains the text.
+
+```
+$ omarchy-dms search drac
+NAME          REPO                                   STATE
+drac          ShehabShaef/omarchy-drac-theme
+dracula       catlee/omarchy-dracula-theme           installed
+flat-dracula  OldJobobo/omarchy-flat-dracula-theme
+```
+
+`NAME` is what `update` and `remove` take, `REPO` what `install` takes. When piped it prints just
+`owner/repo`, one per line. It does not check which ones have a `colors.toml`.
 
 ## sync: Omarchy's own themes
 
