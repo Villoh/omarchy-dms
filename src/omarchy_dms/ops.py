@@ -1,4 +1,4 @@
-"""What omarchy-dms does, as an API: sync, install, update, remove, installed, hook.
+"""What omarchy-dms does, as an API: sync, install, update, remove, installed.
 
 No printing and no exiting: progress goes to `log`, problems are exceptions
 (DmsError, StoreError, ThemeError), results are returned.
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import theme
-from .dms import Dms
+from .dms import Dms, DmsError
 from .store import Store, StoreError, clone, resolve_repo
 
 STORE_URL = "https://omarchy.org/themes/"
@@ -50,7 +50,6 @@ class Omarchy:
         dms: Dms,
         store: Store,
         builtin_dir: Path | None = None,
-        hook_command: str = "omarchy-dms hook",
         log: Callable[[str], None] = print,
         settle: float = 1.0,
         sleep=time.sleep,
@@ -59,7 +58,6 @@ class Omarchy:
         self.dms = dms
         self.store = store
         self.builtin_dir = Path(builtin_dir) if builtin_dir else None
-        self.hook_command = hook_command
         self.log = log
         self.settle = settle
         self._sleep = sleep
@@ -68,9 +66,8 @@ class Omarchy:
     # -- internals
     @contextmanager
     def _session(self):
-        """Autosave off, the wallpaper hook registered, and a way back (Original)."""
+        """Autosave off, and a way back (Original)."""
         with self.dms.autosave_paused():
-            self.dms.set_option("applyCommand", self.hook_command)
             if not self.dms.find_profile("original", "Original"):
                 self.log("create: Original")
                 self.dms.create_profile("Original")
@@ -103,6 +100,7 @@ class Omarchy:
         if existing:
             if not force:
                 self.log(f"skip: {name}")
+                self._pin_folder(existing, slug, log=True)
                 return
             self.dms.remove_profile(existing["slug"])
         if not self.store.theme_json(slug).is_file():
@@ -115,6 +113,15 @@ class Omarchy:
         self._sleep(self.settle)
         self.log(f"create: {name}")
         self.dms.create_profile(name)
+        self._pin_folder(self.dms.find_profile(slug, name), slug)
+
+    def _pin_folder(self, prof, slug, log=False):
+        """The picker of dmsProfiles opens on the theme's wallpapers, whatever the current one is."""
+        folder = str(self.store.wallpapers(slug))
+        if self.store.images(slug) and prof.get("wallpaperFolder") != folder:
+            if log:
+                self.log(f"folder: {prof.get('name', slug)}")
+            self.dms.set_wallpaper_folder(prof["slug"], folder)
 
     # -- operations
     def installed(self):
@@ -157,8 +164,9 @@ class Omarchy:
     def update(self, names=()):
         """Refetch installed community themes; returns the slugs that failed.
 
-        Profiles are left alone: they point at theme.json by path, so the colors
-        follow; `install` again to also refresh a profile's own wallpaper copy.
+        Profiles are left alone, as they point at theme.json by path and the colors
+        follow (`install` again to also refresh a profile's own wallpaper copy), except
+        for their wallpaper folder, which is set if missing.
         """
         names = [self.slug(n) for n in names]
         by_slug = {t.slug: t for t in self.store.themes()}
@@ -175,7 +183,10 @@ class Omarchy:
             self.log(f"update: {t.slug} ({t.source})")
             try:
                 self.store.fetch(t.source, t.slug)
-            except (StoreError, theme.ThemeError) as e:
+                prof = self.dms.find_profile(t.slug, theme.profile_name(t.slug))
+                if prof:
+                    self._pin_folder(prof, t.slug, log=True)
+            except (StoreError, theme.ThemeError, DmsError) as e:
                 self.log(f"failed: {t.slug}: {e}")
                 failed.append(t.slug)
         return failed
@@ -231,14 +242,3 @@ class Omarchy:
                     self.log(f"removed: {slug}")
                 else:
                     self.log(f"removed profile: {slug} (its files are read-only here; sync recreates the profile)")
-
-    def hook(self, slug):
-        """dmsProfiles apply command: point the wallpaper back at the whole theme folder.
-
-        A profile carries one wallpaper copy (plus its thumbnail), which is all
-        the carousel would list. dmsProfiles sets its own wallpaper *after* this
-        command, so the change lands a moment later.
-        """
-        images = self.store.images(slug)
-        if images:
-            self.dms.set_wallpaper_later(images[0])

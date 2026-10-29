@@ -9,7 +9,6 @@ from omarchy_dms import Dms, Omarchy, Store
 omarchy = Omarchy(
     Dms(),
     Store(themes_dir, wallpapers_dir),
-    hook_command="omarchy-dms hook",
     log=print,
 )
 omarchy.install("catlee/omarchy-dracula-theme")
@@ -33,7 +32,7 @@ The package root re-exports `Dms`, `DmsError`, `Omarchy`, `Row`, `Store`, `Store
 
 ## Omarchy
 
-`Omarchy(dms, store, builtin_dir=None, hook_command="omarchy-dms hook", log=print, settle=1.0, sleep=time.sleep, omarchy_repo=OMARCHY_REPO)`
+`Omarchy(dms, store, builtin_dir=None, log=print, settle=1.0, sleep=time.sleep, omarchy_repo=OMARCHY_REPO)`
 
 `builtin_dir` is the `themes/` directory of an Omarchy checkout; when it is `None`, `sync` makes a
 partial clone of `omarchy_repo` instead.
@@ -45,17 +44,16 @@ partial clone of `omarchy_repo` instead.
 | `install(arg)` | the slug | Install a community theme from `owner/repo` or a git URL. |
 | `update(names=())` | slugs that failed | Fetch installed community themes again. |
 | `remove(names)` | | Delete themes. Themes deployed read-only only lose their profile. |
-| `hook(slug)` | | The apply command: set the wallpaper back to the theme folder, detached. |
 
 ## Dms
 
-`Dms(runner=run_dms, sleep=time.sleep, attempts=60, interval=0.25, spawn=subprocess.Popen)`
+`Dms(runner=run_dms, sleep=time.sleep, attempts=60, interval=0.25)`
 
 The only place that starts a process is `runner`, a callable that takes the `dms` arguments and
 returns its output. Replace it to talk to DMS another way, or to test. Methods: `profiles()`,
 `find_profile(slug, name)`, `status()`, `active()`, `snapshot()`, `set_option()`,
 `autosave_paused()` (a context manager), `create_profile()`, `remove_profile()`, `apply_profile()`,
-`custom_theme()`, `set_mode()`, `set_wallpaper()`, `set_wallpaper_later()`.
+`custom_theme()`, `set_mode()`, `set_wallpaper()`, `set_wallpaper_folder()`.
 
 Calls that DMS finishes asynchronously wait until the result shows up, up to
 `attempts * interval` seconds, then raise `DmsError`.

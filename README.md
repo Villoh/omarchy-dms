@@ -14,7 +14,7 @@ theme's wallpapers and creates one profile per theme through `dms ipc`. Themes f
 uv tool install omarchy-dms     # or: pipx install omarchy-dms
 ```
 
-You also need DMS with the **dmsProfiles** plugin, and, optionally, **Wallpaper Carousel**. See
+You also need DMS with the **dmsProfiles** plugin. See
 [Installation](https://github.com/Villoh/omarchy-dms/blob/main/docs/installation.md).
 
 ## Quick start
@@ -40,10 +40,9 @@ Installing a theme applies it, and your previous look is saved as a profile call
 ## Works with
 
 - **[dmsProfiles](https://github.com/satoshoe-dev/dms-profiles)** (required): stores and switches
-  the looks.
-- **[Wallpaper Carousel](https://github.com/motor-dev/wallpaperCarousel)** (optional): browse every
-  wallpaper of the active theme. `omarchy-dms` keeps the wallpaper pointing at the theme's folder
-  so the carousel lists them all. See [Companion plugins](https://github.com/Villoh/omarchy-dms/blob/main/docs/companion-plugins.md).
+  the looks, and has a picker for the wallpapers of the active theme
+  (`dms ipc call profiles wallpapers`). It needs the version with the wallpaper folder
+  (`profiles folder`); see [Companion plugins](https://github.com/Villoh/omarchy-dms/blob/main/docs/companion-plugins.md).
 
 ## Documentation
 
@@ -51,8 +50,8 @@ Installing a theme applies it, and your previous look is saved as a profile call
 |---|---|
 | [Installation](https://github.com/Villoh/omarchy-dms/blob/main/docs/installation.md) | requirements, `uv tool`, pipx, pip, Nix, plugins |
 | [Usage](https://github.com/Villoh/omarchy-dms/blob/main/docs/usage.md) | every command in detail |
-| [Companion plugins](https://github.com/Villoh/omarchy-dms/blob/main/docs/companion-plugins.md) | dmsProfiles and Wallpaper Carousel |
-| [How it works](https://github.com/Villoh/omarchy-dms/blob/main/docs/how-it-works.md) | color mapping, profiles, the wallpaper hook, file layout |
+| [Companion plugins](https://github.com/Villoh/omarchy-dms/blob/main/docs/companion-plugins.md) | dmsProfiles and its wallpaper picker |
+| [How it works](https://github.com/Villoh/omarchy-dms/blob/main/docs/how-it-works.md) | color mapping, profiles, the wallpaper folder, file layout |
 | [Library](https://github.com/Villoh/omarchy-dms/blob/main/docs/library.md) | use it from Python instead of the CLI |
 | [Development](https://github.com/Villoh/omarchy-dms/blob/main/docs/development.md) | tests, Nix, CI, releasing |
 

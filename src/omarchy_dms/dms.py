@@ -35,13 +35,11 @@ class Dms:
         sleep=time.sleep,
         attempts=60,
         interval=0.25,
-        spawn: Callable[..., object] = subprocess.Popen,
     ):
         self._run = runner
         self._sleep = sleep
         self.attempts = attempts
         self.interval = interval
-        self._spawn = spawn
 
     def ipc(self, *args):
         return self._run(["ipc", "call", *args])
@@ -121,12 +119,13 @@ class Dms:
             raise DmsError(out)
         self._wait("wallpaper", lambda: self.snapshot().get("session", {}).get("wallpaperPath") == str(path))
 
-    def set_wallpaper_later(self, path, delay=2):
-        """Detached, so the caller (dmsProfiles' apply command) returns at once."""
-        self._spawn(
-            ["sh", "-c", 'sleep "$1"; exec dms ipc call wallpaper set "$2"', "_", str(delay), str(path)],
-            start_new_session=True,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+    def set_wallpaper_folder(self, slug, path):
+        """The folder dmsProfiles' wallpaper picker opens on for this profile."""
+        out = self.ipc("profiles", "folder", slug, str(path))
+        if out != "started":
+            hint = " (dmsProfiles too old: it needs `profiles folder`)" if "not found" in out else ""
+            raise DmsError(f"profiles folder {slug}: {out}{hint}")
+        self._wait(
+            f"wallpaper folder of {slug!r}",
+            lambda: (self.find_profile(slug, "") or {}).get("wallpaperFolder") == str(path),
         )

@@ -1,6 +1,6 @@
 # Companion plugins
 
-`omarchy-dms` does not draw any interface of its own. It builds on two DMS plugins.
+`omarchy-dms` does not draw any interface of its own. It builds on a DMS plugin.
 
 ## dmsProfiles (required)
 
@@ -24,40 +24,32 @@ bind = SUPER CTRL, SPACE, exec, dms ipc call profiles toggle
 The picker has four views (strip, free, carousel, grid) and several shapes; see the plugin's
 settings, or `dms ipc call profiles setOption pickerView grid`.
 
-## Wallpaper Carousel (optional, recommended)
+## The wallpaper picker
 
-[Wallpaper Carousel](https://github.com/motor-dev/wallpaperCarousel) by yngwe is a fullscreen,
-skewed carousel to browse and pick wallpapers. Choosing one also updates the shell's color
-scheme.
-
-It lists the images in the folder of the **current wallpaper**. Omarchy themes ship several
-wallpapers each, so with `omarchy-dms` the carousel shows all of a theme's images and you switch
-between them without changing the profile. Open it with:
+Omarchy themes ship several wallpapers each. dmsProfiles has a picker for them: it opens on the
+**wallpaper folder** of the active profile, you pick an image, and autosave stores it in that
+profile. `omarchy-dms` sets the folder of each profile to `~/Pictures/Wallpapers/omarchy/<theme>/`
+(`sync` also does it for profiles that already exist).
 
 ```sh
-dms ipc call wallpaperCarousel toggle
+dms ipc call profiles wallpapers
 ```
 
 ```
-bind = SUPER CTRL SHIFT, SPACE, exec, dms ipc call wallpaperCarousel toggle
+bind = SUPER CTRL SHIFT, SPACE, exec, dms ipc call profiles wallpapers
 ```
 
-It also has `open`, `close`, `cycleNext` and `cyclePrevious`. Navigate with the arrow keys,
-Enter applies, Escape closes.
+It uses the picker view and shape you chose for profiles. DMS must manage your wallpaper (Settings
+→ Wallpaper); external engines (swww, swaybg, hyprpaper) are not supported.
 
-Two things to know:
-
-- DMS must manage your wallpaper. The carousel does not work with external wallpaper engines
-  (swww, swaybg, hyprpaper). Enable it in DMS Settings → Wallpaper.
-- dmsProfiles keeps a single copy of the wallpaper inside each profile, so after a profile switch
-  the carousel would only see that one file. `omarchy-dms` fixes this with an
-  [apply command](how-it-works.md#the-wallpaper-hook) that points the wallpaper back at the theme's folder.
+This needs a dmsProfiles with the `profiles folder` command. With an older one, `sync` stops with
+`dmsProfiles too old`. The folder can also be changed by hand, in the plugin settings or with
+`dms ipc call profiles folder <slug> <path>`.
 
 ## Install
 
 ```sh
 dms plugins install dmsProfiles
-dms plugins install wallpaperCarousel
 ```
 
-Or from DMS Settings → Plugins → Browse. Enable both afterwards in Settings → Plugins.
+Or from DMS Settings → Plugins → Browse. Enable it afterwards in Settings → Plugins.

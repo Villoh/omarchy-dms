@@ -3,11 +3,9 @@
 ## Requirements
 
 - Linux with [Dank Material Shell](https://danklinux.com) (DMS).
-- The **dmsProfiles** plugin, enabled. It provides the profiles and the picker.
+- The **dmsProfiles** plugin, enabled. It provides the profiles, the picker and the wallpaper picker (with the `profiles folder` command).
 - Python 3.11 or newer and `git`.
 - `fzf` is optional: it powers the pickers of `install` and `remove` when you pass no argument.
-
-The [Wallpaper Carousel](companion-plugins.md) plugin is optional but recommended.
 
 ## Install the tool
 
@@ -48,16 +46,15 @@ The tool does not need Nix; this is just another way to get it. To install it de
 the flake as an input and use `inputs.omarchy-dms.packages.${system}.default`. See
 [Use it from Nix](development.md#use-it-from-nix).
 
-## Install the plugins
+## Install the plugin
 
 In DMS, open Settings → Plugins → Browse, or use the CLI:
 
 ```sh
 dms plugins install dmsProfiles
-dms plugins install wallpaperCarousel      # optional
 ```
 
-Then enable them in Settings → Plugins. Details in [Companion plugins](companion-plugins.md).
+Then enable it in Settings → Plugins. Details in [Companion plugins](companion-plugins.md).
 
 ## Check it works
 

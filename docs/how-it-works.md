@@ -57,32 +57,29 @@ For each theme, `omarchy-dms`:
 
 1. Pauses dmsProfiles autosave, so each change does not get written into the previously active
    profile. It is restored afterwards, also on errors.
-2. Registers the [apply command](#the-wallpaper-hook).
-3. Saves the **Original** profile if it does not exist yet.
-4. Applies the theme, the mode and the first wallpaper, waiting for DMS to confirm each step, then
+2. Saves the **Original** profile if it does not exist yet.
+3. Applies the theme, the mode and the first wallpaper, waiting for DMS to confirm each step, then
    creates the profile.
+4. Sets the profile's [wallpaper folder](#the-wallpaper-folder).
 
 DMS applies these asynchronously, so the tool polls `dms ipc call profiles list|status|snapshot`
 until the state matches instead of sleeping for a fixed time. If DMS does not answer within about
 15 seconds, it fails with `timed out waiting for ...`.
 
-## The wallpaper hook
+## The wallpaper folder
 
-dmsProfiles stores one copy of the wallpaper inside each profile (plus a thumbnail). The
-[Wallpaper Carousel](companion-plugins.md#wallpaper-carousel-optional-recommended) lists the
-images in the folder of the current wallpaper, so after a profile switch it would find only that
-copy.
+A profile stores one wallpaper, not a folder. The wallpaper picker of dmsProfiles
+(`dms ipc call profiles wallpapers`) opens on the picture's folder, which is not always the theme's:
+the profile keeps a copy of the picture, and you may choose one from elsewhere.
 
-`omarchy-dms` registers itself as the profile apply command (`profiles setOption applyCommand`).
-After each switch, dmsProfiles runs `omarchy-dms hook` with `DMS_PROFILE_SLUG` set, and the hook
-points the wallpaper back at the first image of `~/Pictures/Wallpapers/omarchy/<slug>/`. The
-carousel then shows the whole theme.
+So `omarchy-dms` sets the **wallpaper folder** of each profile (`dms ipc call profiles folder
+<slug> ~/Pictures/Wallpapers/omarchy/<slug>`), and the picker always opens on the theme's pictures.
+`sync` also sets it on profiles that already exist, which is how profiles made by older versions
+get it. Themes with no pictures in that folder are left alone.
 
-dmsProfiles sets the profile's own wallpaper *after* running the apply command, so the hook starts
-a detached process that waits 2 seconds before setting the wallpaper. The hook itself returns
-immediately and does not delay the switch. It is the same image, so the change is not visible.
+Before 0.4, `omarchy-dms` registered an apply command (`omarchy-dms hook`) that pointed the
+wallpaper back at the theme's folder after each switch. It is gone. If you have it set, clear it:
 
-Profiles of themes with no folder in `~/Pictures/Wallpapers/omarchy/` are left alone.
-
-With autosave on, dmsProfiles stores that wallpaper path in the profile. This does not change what
-you see.
+```sh
+dms ipc call profiles setOption applyCommand ""
+```
