@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import theme
-from .dms import Dms, DmsError
+from .dms import Dms, DmsError, FolderUnsupported
 from .store import Store, StoreError, clone, resolve_repo
 
 STORE_URL = "https://omarchy.org/themes/"
@@ -62,6 +62,7 @@ class Omarchy:
         self.settle = settle
         self._sleep = sleep
         self.omarchy_repo = omarchy_repo
+        self._folders = True  # False once dmsProfiles turned out not to have `profiles folder`
 
     # -- internals
     @contextmanager
@@ -116,12 +117,19 @@ class Omarchy:
         self._pin_folder(self.dms.find_profile(slug, name), slug)
 
     def _pin_folder(self, prof, slug, log=False):
-        """The picker of dmsProfiles opens on the theme's wallpapers, whatever the current one is."""
-        folder = str(self.store.wallpapers(slug))
-        if self.store.images(slug) and prof.get("wallpaperFolder") != folder:
-            if log:
-                self.log(f"folder: {prof.get('name', slug)}")
-            self.dms.set_wallpaper_folder(prof["slug"], folder)
+        """The picker of dmsProfiles opens on the theme's wallpapers, whatever the current one is.
+
+        A folder set by hand is kept. With a dmsProfiles that cannot store it, warn once.
+        """
+        if not self._folders or prof.get("wallpaperFolder") or not self.store.images(slug):
+            return
+        if log:
+            self.log(f"folder: {prof.get('name', slug)}")
+        try:
+            self.dms.set_wallpaper_folder(prof["slug"], str(self.store.wallpapers(slug)))
+        except FolderUnsupported as e:
+            self._folders = False
+            self.log(f"warning: {e}")
 
     # -- operations
     def installed(self):
@@ -183,12 +191,16 @@ class Omarchy:
             self.log(f"update: {t.slug} ({t.source})")
             try:
                 self.store.fetch(t.source, t.slug)
+            except (StoreError, theme.ThemeError) as e:
+                self.log(f"failed: {t.slug}: {e}")
+                failed.append(t.slug)
+                continue
+            try:  # DMS is not needed to update, only to also set the wallpaper folder
                 prof = self.dms.find_profile(t.slug, theme.profile_name(t.slug))
                 if prof:
                     self._pin_folder(prof, t.slug, log=True)
-            except (StoreError, theme.ThemeError, DmsError) as e:
-                self.log(f"failed: {t.slug}: {e}")
-                failed.append(t.slug)
+            except DmsError as e:
+                self.log(f"warning: {t.slug}: wallpaper folder not set: {e}")
         return failed
 
     def available(self, query="", owner="", only_new=False):

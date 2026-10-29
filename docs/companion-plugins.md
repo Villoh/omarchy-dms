@@ -29,7 +29,7 @@ settings, or `dms ipc call profiles setOption pickerView grid`.
 Omarchy themes ship several wallpapers each. dmsProfiles has a picker for them: it opens on the
 **wallpaper folder** of the active profile, you pick an image, and autosave stores it in that
 profile. `omarchy-dms` sets the folder of each profile to `~/Pictures/Wallpapers/omarchy/<theme>/`
-(`sync` also does it for profiles that already exist).
+(`sync` and `update` also do it for profiles that have none).
 
 ```sh
 dms ipc call profiles wallpapers
@@ -42,9 +42,9 @@ bind = SUPER CTRL SHIFT, SPACE, exec, dms ipc call profiles wallpapers
 It uses the picker view and shape you chose for profiles. DMS must manage your wallpaper (Settings
 → Wallpaper); external engines (swww, swaybg, hyprpaper) are not supported.
 
-This needs a dmsProfiles with the `profiles folder` command. With an older one, `sync` stops with
-`dmsProfiles too old`. The folder can also be changed by hand, in the plugin settings or with
-`dms ipc call profiles folder <slug> <path>`.
+This needs a dmsProfiles with the `profiles folder` command. With an older one, the profiles are
+still made, and `omarchy-dms` warns once that the folder could not be set. A folder you set by hand,
+in the plugin settings or with `dms ipc call profiles folder <slug> <path>`, is never replaced.
 
 ## Install
 

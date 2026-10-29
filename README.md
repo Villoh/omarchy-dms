@@ -42,7 +42,7 @@ Installing a theme applies it, and your previous look is saved as a profile call
 - **[dmsProfiles](https://github.com/satoshoe-dev/dms-profiles)** (required): stores and switches
   the looks, and has a picker for the wallpapers of the active theme
   (`dms ipc call profiles wallpapers`). It needs the version with the wallpaper folder
-  (`profiles folder`); see [Companion plugins](https://github.com/Villoh/omarchy-dms/blob/main/docs/companion-plugins.md).
+  (`profiles folder`) to set it; see [Companion plugins](https://github.com/Villoh/omarchy-dms/blob/main/docs/companion-plugins.md).
 
 ## Documentation
 

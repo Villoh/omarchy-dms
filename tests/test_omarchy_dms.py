@@ -63,6 +63,10 @@ class FakeShell:
             case ["profiles", "folder", slug, path]:
                 if getattr(self, "folder_missing", False):
                     return "Function not found."
+                if not path.startswith("/"):
+                    return "the folder must be an absolute path"
+                if slug not in [p["slug"] for p in self.profiles]:
+                    return f"no profile {slug}"
                 for p in self.profiles:
                     if p["slug"] == slug:
                         self.pending.append((self.delay, lambda p=p, path=path: p.update(wallpaperFolder=path)))
@@ -435,12 +439,29 @@ class OpsTests(unittest.TestCase):
             [["profiles", "folder", "nord", str(e.store.wallpapers("nord"))]],
         )
 
-    def test_old_dmsprofiles_without_folder_command_is_explained(self):
-        e = Env(self)
-        e.deploy_builtin("nord")
+    def test_old_dmsprofiles_without_folder_command_warns_once_and_goes_on(self):
+        e = Env(self, builtin=("nord", "white"))
+        for slug in ("nord", "white"):
+            e.deploy_builtin(slug)
         e.shell.folder_missing = True
-        with self.assertRaisesRegex(DmsError, "too old"):
-            e.omarchy.sync()
+        e.omarchy.sync()
+        self.assertEqual([p["slug"] for p in e.shell.profiles], ["original", "nord", "white"])
+        self.assertEqual(len([m for m in e.logs if m.startswith("warning:")]), 1)
+
+    def test_a_folder_set_by_hand_is_kept(self):
+        e = Env(self, builtin=("nord",))
+        e.deploy_builtin("nord")
+        e.omarchy.sync()
+        e.shell.profiles[1]["wallpaperFolder"] = "/mine/"
+        e.omarchy.sync()
+        self.assertEqual(e.shell.profiles[1]["wallpaperFolder"], "/mine/")
+
+    def test_update_survives_dms_failing(self):
+        e = Env(self)
+        e.store.fetch(e.community_repo(), "dracula")
+        e.omarchy.dms.profiles = lambda: (_ for _ in ()).throw(DmsError("no dms"))
+        self.assertEqual(e.omarchy.update(), [])
+        self.assertTrue(any(m.startswith("warning: dracula") for m in e.logs))
 
     def test_timeout_when_shell_never_settles(self):
         e = Env(self)

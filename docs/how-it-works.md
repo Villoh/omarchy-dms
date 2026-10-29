@@ -74,8 +74,8 @@ the profile keeps a copy of the picture, and you may choose one from elsewhere.
 
 So `omarchy-dms` sets the **wallpaper folder** of each profile (`dms ipc call profiles folder
 <slug> ~/Pictures/Wallpapers/omarchy/<slug>`), and the picker always opens on the theme's pictures.
-`sync` also sets it on profiles that already exist, which is how profiles made by older versions
-get it. Themes with no pictures in that folder are left alone.
+`sync` and `update` also set it on profiles that have none, which is how profiles made by older
+versions get it; a folder you chose is kept. Themes with no pictures in that folder are left alone.
 
 Before 0.4, `omarchy-dms` registered an apply command (`omarchy-dms hook`) that pointed the
 wallpaper back at the theme's folder after each switch. It is gone. If you have it set, clear it:

@@ -18,6 +18,10 @@ class DmsError(RuntimeError):
     pass
 
 
+class FolderUnsupported(DmsError):
+    """dmsProfiles without the `profiles folder` command."""
+
+
 def run_dms(args):
     try:
         p = subprocess.run(["dms", *args], capture_output=True, text=True, check=False)
@@ -122,9 +126,10 @@ class Dms:
     def set_wallpaper_folder(self, slug, path):
         """The folder dmsProfiles' wallpaper picker opens on for this profile."""
         out = self.ipc("profiles", "folder", slug, str(path))
+        if "not found" in out:
+            raise FolderUnsupported("dmsProfiles has no `profiles folder` command: update the plugin")
         if out != "started":
-            hint = " (dmsProfiles too old: it needs `profiles folder`)" if "not found" in out else ""
-            raise DmsError(f"profiles folder {slug}: {out}{hint}")
+            raise DmsError(f"profiles folder {slug}: {out}")
         self._wait(
             f"wallpaper folder of {slug!r}",
             lambda: (self.find_profile(slug, "") or {}).get("wallpaperFolder") == str(path),
