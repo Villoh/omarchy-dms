@@ -60,6 +60,17 @@ class FakeShell:
                         "session": {k: self.state[k] for k in ("isLightMode", "wallpaperPath")},
                     }
                 )
+            case ["profiles", "folder", slug, path]:
+                if getattr(self, "folder_missing", False):
+                    return "Function not found."
+                if not path.startswith("/"):
+                    return "the folder must be an absolute path"
+                if slug not in [p["slug"] for p in self.profiles]:
+                    return f"no profile {slug}"
+                for p in self.profiles:
+                    if p["slug"] == slug:
+                        self.pending.append((self.delay, lambda p=p, path=path: p.update(wallpaperFolder=path)))
+                return "started"
             case ["profiles", "setOption", k, v]:
                 self.options[k] = v
             case ["profiles", "create", name]:
@@ -108,12 +119,10 @@ class Env:
         self.store.wall_dir.mkdir()
         self.shell = FakeShell(profiles=profiles)
         self.logs = []
-        self.spawned = []
         self.omarchy = Omarchy(
-            Dms(self.shell, sleep=lambda s: None, spawn=lambda *a, **k: self.spawned.append((a, k))),
+            Dms(self.shell, sleep=lambda s: None),
             self.store,
             self.builtin_dir,
-            "omarchy-dms hook",
             self.logs.append,
             0,
             lambda s: None,
@@ -210,7 +219,7 @@ class OpsTests(unittest.TestCase):
         e.omarchy.sync()
         self.assertEqual([p["slug"] for p in e.shell.profiles], ["original", "nord", "white"])
         self.assertEqual(e.shell.state["isLightMode"], True)  # white was last
-        self.assertEqual(e.shell.options, {"autosave": "true", "applyCommand": "omarchy-dms hook"})
+        self.assertEqual(e.shell.options, {"autosave": "true"})
         e.logs.clear()
         e.omarchy.sync()
         self.assertEqual(e.logs, ["skip: Nord", "skip: White"])
@@ -277,7 +286,6 @@ class OpsTests(unittest.TestCase):
             e.omarchy.dms,
             e.store,
             None,
-            "omarchy-dms hook",
             e.logs.append,
             0,
             lambda s: None,
@@ -368,6 +376,13 @@ class OpsTests(unittest.TestCase):
         e.omarchy.update(["nord"])
         self.assertEqual(e.logs, ["not updatable (no .source): nord"])
 
+    def test_update_pins_the_folder_of_an_existing_profile(self):
+        e = Env(self, profiles=("dracula",))
+        e.store.fetch(e.community_repo(), "dracula")
+        self.assertEqual(e.omarchy.update(), [])
+        prof = e.omarchy.dms.find_profile("dracula", "")
+        self.assertEqual(prof["wallpaperFolder"], str(e.store.wallpapers("dracula")))
+
     def test_fetch_rejects_alacritty_only_and_builtin(self):
         e = Env(self)
         url = e.community_repo()
@@ -408,15 +423,45 @@ class OpsTests(unittest.TestCase):
             with self.assertRaises(StoreError):
                 e.omarchy.remove([bad])
 
-    def test_hook_is_detached_and_ignores_unknown(self):
-        e = Env(self)
+    def test_sync_pins_the_wallpaper_folder_also_on_existing_profiles(self):
+        e = Env(self, builtin=("nord", "white"))
+        for slug in ("nord", "white"):
+            e.deploy_builtin(slug)
+        e.omarchy.sync()
+        for slug in ("nord", "white"):
+            prof = e.omarchy.dms.find_profile(slug, "")
+            self.assertEqual(prof["wallpaperFolder"], str(e.store.wallpapers(slug)))
+        e.shell.profiles[1].pop("wallpaperFolder")  # a profile made before this existed
+        e.shell.calls.clear()
+        e.omarchy.sync()
+        self.assertEqual(
+            [c for c in e.shell.calls if c[1] == "folder"],
+            [["profiles", "folder", "nord", str(e.store.wallpapers("nord"))]],
+        )
+
+    def test_old_dmsprofiles_without_folder_command_warns_once_and_goes_on(self):
+        e = Env(self, builtin=("nord", "white"))
+        for slug in ("nord", "white"):
+            e.deploy_builtin(slug)
+        e.shell.folder_missing = True
+        e.omarchy.sync()
+        self.assertEqual([p["slug"] for p in e.shell.profiles], ["original", "nord", "white"])
+        self.assertEqual(len([m for m in e.logs if m.startswith("warning:")]), 1)
+
+    def test_a_folder_set_by_hand_is_kept(self):
+        e = Env(self, builtin=("nord",))
         e.deploy_builtin("nord")
-        e.omarchy.hook("nord")
-        (argv,), kw = e.spawned[0]
-        self.assertTrue(kw["start_new_session"])
-        self.assertTrue(argv[-1].endswith("1.webp"))
-        e.omarchy.hook("unknown")
-        self.assertEqual(len(e.spawned), 1)
+        e.omarchy.sync()
+        e.shell.profiles[1]["wallpaperFolder"] = "/mine/"
+        e.omarchy.sync()
+        self.assertEqual(e.shell.profiles[1]["wallpaperFolder"], "/mine/")
+
+    def test_update_survives_dms_failing(self):
+        e = Env(self)
+        e.store.fetch(e.community_repo(), "dracula")
+        e.omarchy.dms.profiles = lambda: (_ for _ in ()).throw(DmsError("no dms"))
+        self.assertEqual(e.omarchy.update(), [])
+        self.assertTrue(any(m.startswith("warning: dracula") for m in e.logs))
 
     def test_timeout_when_shell_never_settles(self):
         e = Env(self)

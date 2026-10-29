@@ -18,6 +18,10 @@ class DmsError(RuntimeError):
     pass
 
 
+class FolderUnsupported(DmsError):
+    """dmsProfiles without the `profiles folder` command."""
+
+
 def run_dms(args):
     try:
         p = subprocess.run(["dms", *args], capture_output=True, text=True, check=False)
@@ -35,13 +39,11 @@ class Dms:
         sleep=time.sleep,
         attempts=60,
         interval=0.25,
-        spawn: Callable[..., object] = subprocess.Popen,
     ):
         self._run = runner
         self._sleep = sleep
         self.attempts = attempts
         self.interval = interval
-        self._spawn = spawn
 
     def ipc(self, *args):
         return self._run(["ipc", "call", *args])
@@ -121,12 +123,14 @@ class Dms:
             raise DmsError(out)
         self._wait("wallpaper", lambda: self.snapshot().get("session", {}).get("wallpaperPath") == str(path))
 
-    def set_wallpaper_later(self, path, delay=2):
-        """Detached, so the caller (dmsProfiles' apply command) returns at once."""
-        self._spawn(
-            ["sh", "-c", 'sleep "$1"; exec dms ipc call wallpaper set "$2"', "_", str(delay), str(path)],
-            start_new_session=True,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+    def set_wallpaper_folder(self, slug, path):
+        """The folder dmsProfiles' wallpaper picker opens on for this profile."""
+        out = self.ipc("profiles", "folder", slug, str(path))
+        if "not found" in out:
+            raise FolderUnsupported("dmsProfiles has no `profiles folder` command: update the plugin")
+        if out != "started":
+            raise DmsError(f"profiles folder {slug}: {out}")
+        self._wait(
+            f"wallpaper folder of {slug!r}",
+            lambda: (self.find_profile(slug, "") or {}).get("wallpaperFolder") == str(path),
         )

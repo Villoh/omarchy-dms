@@ -8,7 +8,6 @@ omarchy-dms update [theme ...]
 omarchy-dms remove [-y] [theme ...]
 omarchy-dms sync [--force] [theme ...]
 omarchy-dms render COLORS_TOML NAME OUTDIR
-omarchy-dms hook
 ```
 
 Errors print `error: ...` to stderr and exit with status 1.
@@ -142,8 +141,3 @@ writes the DMS theme folder and the wallpapers exactly like `install` does, and 
 (`theme.json` plus the previews) without touching DMS or copying wallpapers. It exists for
 declarative setups that generate the folders at build time; day to day, `sync` and `install` do it. See
 [color mapping](how-it-works.md#color-mapping).
-
-## hook
-
-`omarchy-dms hook` is not meant to be run by hand. It is the profile *apply command* that
-dmsProfiles runs after a switch; see [the wallpaper hook](how-it-works.md#the-wallpaper-hook).

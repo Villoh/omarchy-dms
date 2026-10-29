@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import shlex
 import shutil
 import subprocess
 import sys
@@ -16,11 +15,6 @@ from .store import Store, StoreError
 HOME = Path.home()
 THEMES = HOME / ".config/DankMaterialShell/themes"
 WALLPAPERS = HOME / "Pictures/Wallpapers/omarchy"
-
-
-def _hook_command():
-    exe = shutil.which("omarchy-dms")
-    return f"{shlex.quote(exe)} hook" if exe else f"{shlex.quote(sys.executable)} -m omarchy_dms hook"
 
 
 def _pick(items, prompt, multi):
@@ -76,7 +70,6 @@ def _parser():
     s.add_argument("colors")
     s.add_argument("slug")
     s.add_argument("outdir")
-    sub.add_parser("hook", help="dmsProfiles apply command (reads DMS_PROFILE_SLUG)")
     return p
 
 
@@ -89,7 +82,7 @@ def main(argv=None):
         if args.limit is not None and args.limit < 1:
             parser.error("--limit must be at least 1")
     builtin = Path(os.environ["OMARCHY_THEMES"]) if os.environ.get("OMARCHY_THEMES") else None
-    omarchy = Omarchy(Dms(), Store(THEMES, WALLPAPERS), builtin, _hook_command())
+    omarchy = Omarchy(Dms(), Store(THEMES, WALLPAPERS), builtin)
     try:
         match args.cmd:
             case "sync":
@@ -127,8 +120,6 @@ def main(argv=None):
                     print(f"showing {len(shown)} of {len(found)}", file=sys.stderr)
             case "render":
                 theme.render(args.colors, args.slug, args.outdir)
-            case "hook":
-                omarchy.hook(os.environ.get("DMS_PROFILE_SLUG", ""))
     except (DmsError, StoreError, theme.ThemeError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
