@@ -76,6 +76,17 @@ def convert(palette, slug):
     # selection_background in the ANSI shape is often a loud highlight, so not used.
     selection = pick("selection", default=_mix(bg, raise_to, 0.16))
 
+    container = dark_bg if light else lighter_bg
+    high = darker_bg if light else selection
+    # DMS draws the bar with surfaceContainer and its widgets with surfaceContainerHigh;
+    # if the palette makes them equal (selection == lighter_background) widgets vanish.
+    # Dark: use the background for the bar, as Omarchy does; light: darken the widgets.
+    if _rgb(high) == _rgb(container):
+        if light:
+            high = _mix(container, raise_to, 0.08)
+        else:
+            container = bg
+
     colors = {
         "primary": accent,
         "primaryText": bg,
@@ -91,8 +102,8 @@ def convert(palette, slug):
         "outline": pick("muted", "color8", default=_mix(fg, bg, 0.5)),
         "surfaceContainerLowest": bg if light else darker_bg,
         "surfaceContainerLow": bg if light else dark_bg,
-        "surfaceContainer": dark_bg if light else lighter_bg,
-        "surfaceContainerHigh": darker_bg if light else selection,
+        "surfaceContainer": container,
+        "surfaceContainerHigh": high,
         "error": pick("red", "color1", default=accent),
         "warning": pick("yellow", "color3", default=accent),
         "info": pick("blue", "color4", default=accent),

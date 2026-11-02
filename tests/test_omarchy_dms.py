@@ -176,6 +176,14 @@ class ThemeTests(unittest.TestCase):
             with self.assertRaises(ThemeError):
                 theme.convert(theme.load_palette(p), "x")
 
+    def test_widgets_stand_out_from_the_bar(self):
+        # selection == lighter_background used to give bar and widgets the same color
+        pal = {"background": "#0b0d15", "foreground": "#dbc6b3", "accent": "#94a3ce"}
+        pal["selection"], pal["lighter_background"] = "#23252c", "#23252C"  # case must not matter
+        c = theme.convert(pal, "x")["dark"]
+        self.assertEqual(c["surfaceContainer"], "#0b0d15")  # bar = background, like Omarchy
+        self.assertEqual(c["surfaceContainerHigh"].lower(), "#23252c")  # widgets = selection
+
     def test_light_palette(self):
         with tempfile.TemporaryDirectory() as t:
             p = Path(t) / "c.toml"
