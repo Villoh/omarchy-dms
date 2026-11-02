@@ -181,7 +181,8 @@ class ThemeTests(unittest.TestCase):
         pal = {"background": "#0b0d15", "foreground": "#dbc6b3", "accent": "#94a3ce"}
         pal["selection"], pal["lighter_background"] = "#23252c", "#23252C"  # case must not matter
         c = theme.convert(pal, "x")["dark"]
-        self.assertNotEqual(c["surfaceContainer"].lower(), c["surfaceContainerHigh"].lower())
+        self.assertEqual(c["surfaceContainer"], "#0b0d15")  # bar = background, like Omarchy
+        self.assertEqual(c["surfaceContainerHigh"].lower(), "#23252c")  # widgets = selection
 
     def test_light_palette(self):
         with tempfile.TemporaryDirectory() as t:
