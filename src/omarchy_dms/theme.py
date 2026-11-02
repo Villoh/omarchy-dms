@@ -80,7 +80,7 @@ def convert(palette, slug):
     high = darker_bg if light else selection
     # DMS draws the bar with surfaceContainer and its widgets with surfaceContainerHigh;
     # if the palette makes them equal (selection == lighter_background) widgets vanish.
-    if high == container:
+    if _rgb(high) == _rgb(container):
         high = _mix(container, raise_to, 0.08)
 
     colors = {
