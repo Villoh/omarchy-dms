@@ -4,11 +4,14 @@
 
 | What | Where |
 |---|---|
-| DMS theme folders | `~/.config/DankMaterialShell/themes/omarchy-<slug>/` |
+| DMS theme folders | `~/.config/dms/themes/omarchy-<slug>/` |
 | Wallpapers | `~/Pictures/Wallpapers/omarchy/<slug>/` |
 | Where a community theme came from | `omarchy-<slug>/.source` |
 | Marks one of Omarchy's own themes | `omarchy-<slug>/.builtin` |
-| Profiles | owned by dmsProfiles, in `~/.config/DankMaterialShell/profiles/` |
+| Profiles | owned by dmsProfiles, in `~/.config/dms/profiles/` |
+
+DMS 1.6 kept these under `~/.config/DankMaterialShell/` instead; `omarchy-dms` uses that folder only
+when `~/.config/dms/` does not exist.
 
 `omarchy-dms` writes these folders itself, for both community themes (`install`) and Omarchy's own
 (`sync`). A setup that deploys them as read-only symlinks instead (Nix does) also works: such

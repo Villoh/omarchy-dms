@@ -40,7 +40,7 @@ pkgs.symlinkJoin {
 
 with `omarchy = { url = "github:basecamp/omarchy"; flake = false; };` as another input. The
 theme folders can then be generated at build time with `omarchy-dms render`, and deployed to
-`~/.config/DankMaterialShell/themes/omarchy-<name>/` as individual files (not as one linked
+`~/.config/dms/themes/omarchy-<name>/` as individual files (not as one linked
 folder; see [previews](how-it-works.md#previews)).
 
 ## CI
