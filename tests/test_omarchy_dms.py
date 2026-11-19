@@ -207,6 +207,29 @@ class CliTests(unittest.TestCase):
         self.assertRegex(omarchy_dms.__version__, r"^(\d+\.\d+\.\d+.*|unknown)$")
 
 
+class ConfigDirTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.home = Path(tmp.name)
+
+    def check(self, *folders):
+        from omarchy_dms.cli import config_dir
+
+        for f in folders:
+            (self.home / ".config" / f).mkdir(parents=True)
+        return config_dir(self.home).name
+
+    def test_dms2_folder_wins(self):
+        self.assertEqual(self.check("dms", "DankMaterialShell"), "dms")
+
+    def test_dms16_folder_when_only_it_exists(self):
+        self.assertEqual(self.check("DankMaterialShell"), "DankMaterialShell")
+
+    def test_dms2_folder_on_a_fresh_home(self):
+        self.assertEqual(self.check(), "dms")
+
+
 class RepoTests(unittest.TestCase):
     def test_resolve(self):
         self.assertEqual(

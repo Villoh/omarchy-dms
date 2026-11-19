@@ -30,7 +30,7 @@ What it does, in order:
 
 1. Clones the repository (shallow). It must contain a `colors.toml`; alacritty-only themes are
    rejected.
-2. Writes `~/.config/DankMaterialShell/themes/omarchy-<slug>/` with `theme.json`, the two preview
+2. Writes `~/.config/dms/themes/omarchy-<slug>/` with `theme.json`, the two preview
    SVGs the DMS Browse tab shows, and a `.source` file holding the repository URL.
 3. Copies the repository's `backgrounds/` images (jpg, jpeg, png, webp; tiny placeholders are
    skipped) to `~/Pictures/Wallpapers/omarchy/<slug>/`.

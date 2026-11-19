@@ -13,7 +13,15 @@ from .ops import Omarchy, store_repos
 from .store import Store, StoreError
 
 HOME = Path.home()
-THEMES = HOME / ".config/DankMaterialShell/themes"
+
+
+def config_dir(home=HOME):
+    """DMS 2.0 moved its config folder from DankMaterialShell to dms; 1.6 keeps the old one."""
+    new, old = home / ".config/dms", home / ".config/DankMaterialShell"
+    return old if old.is_dir() and not new.is_dir() else new
+
+
+THEMES = config_dir() / "themes"
 WALLPAPERS = HOME / "Pictures/Wallpapers/omarchy"
 
 
